@@ -1,0 +1,8 @@
+"/Users/matthias/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/172.3968.17/CLion.app/Contents/bin/cmake/bin/cmake" -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" /Users/matthias/Documents/Projects/plexDrive/googleDriveApi
+-- Found CURL: /usr/local/lib/libcurl.dylib  
+/usr/local/include
+/usr/local/lib/libcurl.dylib
+include;rapidjson/include/rapidjson;/usr/local/include
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/matthias/Documents/Projects/plexDrive/googleDriveApi/lib
