@@ -1,3 +1,0 @@
-/Users/matthias/Documents/Projects/plexDrive/googleDrive/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/matthias/Documents/Projects/plexDrive/googleDrive/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/matthias/Documents/Projects/plexDrive/googleDrive/cmake-build-debug/CMakeFiles/googleDrive.dir

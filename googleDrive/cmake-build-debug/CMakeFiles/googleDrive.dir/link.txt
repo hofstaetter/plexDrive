@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc libgoogleDrive.a  CMakeFiles/googleDrive.dir/library.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib libgoogleDrive.a
