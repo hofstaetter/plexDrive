@@ -103,9 +103,9 @@ API::request(string host, string path, string type, map<string, string> querystr
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    //curl_easy_setopt(req, CURLOPT_DEBUGFUNCTION, my_trace);
+    curl_easy_setopt(req, CURLOPT_DEBUGFUNCTION, my_trace);
 
-    //curl_version_info_data *d = curl_version_info(CURLVERSION_NOW);
+    curl_version_info_data *d = curl_version_info(CURLVERSION_NOW);
 
     //debug
     curl_easy_setopt(req, CURLOPT_VERBOSE, 1L);
@@ -127,7 +127,7 @@ API::request(string host, string path, string type, map<string, string> querystr
     }
     curl_easy_setopt(req, CURLOPT_URL, url.c_str());
 
-    //curl_easy_setopt(req, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(req, CURLOPT_SSL_VERIFYHOST, 0L);
 
     long contentlength = 0;
 
@@ -174,7 +174,7 @@ API::request(string host, string path, string type, map<string, string> querystr
     //chrono::high_resolution_clock::time_point t3 = chrono::high_resolution_clock::now();
 
     long statuscode;
-    if(result == CURLE_OK) {
+    if(result == CURLE_OK || result == CURLE_RECV_ERROR) {
         //get http status code
         curl_easy_getinfo(req, CURLINFO_RESPONSE_CODE, &statuscode);
 

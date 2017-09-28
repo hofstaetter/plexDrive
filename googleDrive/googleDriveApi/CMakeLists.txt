@@ -14,7 +14,7 @@ file(GLOB SOURCE_FILES
 add_library(googleDriveApi ${SOURCE_FILES})
 
 if(APPLE)
-    target_link_libraries(googleDriveApi /usr/local/lib/libcurl.dylib)
+    target_link_libraries(googleDriveApi curl)
 endif()
 if(UNIX AND NOT APPLE)
     target_link_libraries(googleDriveApi curl)
