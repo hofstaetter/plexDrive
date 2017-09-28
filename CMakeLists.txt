@@ -5,12 +5,17 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64 -DSQLITE_ENABLE_EXPLAIN_COMMENTS")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64")
 
 add_subdirectory(googleDrive)
 
-include_directories(googleDrive/googleDriveApi/include googleDrive/googleDriveApi/rapidjson/include/rapidjson googleDrive/googleDriveApi/curl/include googleDrive/sqlite googleDrive/include)
+if(APPLE)
+    include_directories(googleDrive/googleDriveApi/include googleDrive/googleDriveApi/rapidjson/include/rapidjson googleDrive/googleDriveApi/curl/include googleDrive/sqlite googleDrive/include /usr/local/include/osxfuse)
 #include_directories(${GOOGLEDRIVEAPI_INCLUDE_DIR})
+endif()
+if(UNIX AND NOT APPLE)
+    include_directories(googleDrive/googleDriveApi/include googleDrive/googleDriveApi/rapidjson/include/rapidjson googleDrive/googleDriveApi/curl/include googleDrive/sqlite googleDrive/include)
+endif()
 
 set(SOURCE_FILES main.cpp plexDrive.cpp plexDrive.h)
 add_executable(plexDrive ${SOURCE_FILES})

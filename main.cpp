@@ -1,6 +1,5 @@
 #include <iostream>
 #include <oauth/GoogleOAuth.h>
-
 #include "plexDrive.h"
 
 static struct fuse_operations operations;
