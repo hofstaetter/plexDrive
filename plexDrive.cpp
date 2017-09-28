@@ -15,7 +15,7 @@ void *plexDrive::init(struct fuse_conn_info *conn) {
     return nullptr;
 }
 
-int plexDrive::getAddr(const char *path, struct stat *stbuf) {
+int plexDrive::getAttr(const char *path, struct stat *stbuf) {
     printf("getAddr(%s)\n", path);
 
     memset(stbuf, 0, sizeof(struct stat));

@@ -26,14 +26,14 @@ Change::Change(rapidjson::Document &document) {
     if(document.HasMember("file")) {
         rapidjson::Document d(rapidjson::kObjectType);
         d.CopyFrom(document["file"], d.GetAllocator());
-        this->file = File::File(d);
+        this->file = File(d);
     }
     if(document.HasMember("teamDriveId"))
         this->teamDriveId = document["teamDriveId"].GetString();
     if(document.HasMember("teamDrive")) {
         rapidjson::Document document(rapidjson::kObjectType);
         document.CopyFrom(document["teamDrive"], document.GetAllocator());
-        this->teamDrive = TeamDrive::TeamDrive(document);
+        this->teamDrive = TeamDrive(document);
     }
 
 }

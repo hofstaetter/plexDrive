@@ -19,7 +19,7 @@ TeamDrive::TeamDrive(rapidjson::Document &document) {
     if(document.HasMember("BackgroundImageFile")) {
         rapidjson::Document d(rapidjson::kObjectType);
         d.CopyFrom(document["BackgroundImageFile"], d.GetAllocator());
-        this->backgroundImageFile = BackgroundImageFile::BackgroundImageFile(d);
+        this->backgroundImageFile = BackgroundImageFile(d);
     }
     if(document.HasMember("backgroundImageLink"))
         this->backgroundImageLink = document["backgroundImageLink"].GetString();
