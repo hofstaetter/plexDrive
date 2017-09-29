@@ -26,7 +26,8 @@ Change::Change(rapidjson::Document &document) {
     if(document.HasMember("file")) {
         rapidjson::Document d(rapidjson::kObjectType);
         d.CopyFrom(document["file"], d.GetAllocator());
-        this->file = File(d);
+        File f(d);
+        this->file = f;
     }
     if(document.HasMember("teamDriveId"))
         this->teamDriveId = document["teamDriveId"].GetString();

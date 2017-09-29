@@ -10,16 +10,16 @@
 #include "PlexDrive.h"
 #include "GoogleDrive.h"
 
-static struct fuse_operations operations;
+static struct fuse_operations operations = {
+        .init = PlexDrive::init,
+        .getattr = PlexDrive::getAttr,
+        .readdir = PlexDrive::readDir,
+        .open = PlexDrive::open,
+        .read = PlexDrive::read,
+};
 
 int main(int argc, char *argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-
-    operations.init = PlexDrive::init;
-    operations.getattr = PlexDrive::getAttr;
-    operations.readdir = PlexDrive::readDir;
-    operations.open = PlexDrive::open;
-    operations.read = PlexDrive::read;
 
     return fuse_main(argc, argv, &operations, NULL);
 }
@@ -43,8 +43,9 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
         File f = GoogleDrive::getFile(path);
 
         stbuf->st_mode = (f.getMimeType().compare("application/vnd.google-apps.folder") == 0) ? S_IFDIR | 0755 : S_IFREG | 0777;
-        stbuf->st_nlink = 1;
+        stbuf->st_nlink = 2;
         stbuf->st_size = f.getSize();
+        //TODO modifiedTimes
         cout << "[VERBOSE] getAddr returns 0" << endl;
         return 0;
     } catch (int e) {

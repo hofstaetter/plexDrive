@@ -23,30 +23,30 @@ using namespace std;
 
 class File {
 private:
-    string kind;
+    //string kind;
     string id;
     string name;
     string mimeType;
-    string description;
-    bool starred;
-    bool trashed;
-    bool explicitlyTrashed;
-    User trashingUser;
-    string trashedTime;
+    //string description;
+    //bool starred;
+    //bool trashed;
+    //bool explicitlyTrashed;
+    //User trashingUser;
+    //string trashedTime;
     vector<string> parents;
-    map<string, string> properties;
-    map<string, string> appProperties;
-    vector<string> spaces;
-    long version;
+    //map<string, string> properties;
+    //map<string, string> appProperties;
+    //vector<string> spaces;
+    //long version;
     string webContentLink;
-    string webViewLink;
-    string iconLink;
-    bool hasThumbnail;
+    //string webViewLink;
+    //string iconLink;
+    //bool hasThumbnail;
     string thumbnailLink;
     //TODO
-    time_t viewedByMeTime;
+    long viewedByMeTime;
     //TODO
-    time_t modifiedTime;
+    long modifiedTime;
     //TODO
     long size;
     //TODO
@@ -58,8 +58,8 @@ public:
     string &toString();
     rapidjson::Document &toJSON();
 
-    string &getKind();
-    void setKind(string &kind);
+    /*string &getKind();
+    void setKind(string &kind);*/
 
     string &getId();
     void setId(string &id);
@@ -70,7 +70,7 @@ public:
     string &getMimeType();
     void setMimeType(string &mimeType);
 
-    string &getDescription();
+    /*string &getDescription();
     void setDescription(string &description);
 
     bool isStarred();
@@ -86,12 +86,12 @@ public:
     void setTrashingUser(User &trashingUser);
 
     time_t getTrashedTime();
-    void setTrashedTime(time_t trashedTime);
+    void setTrashedTime(time_t trashedTime);*/
 
     vector<string> &getParents();
     void setParents(vector<string> &parents);
 
-    map<string, string> &getProperties();
+    /*map<string, string> &getProperties();
     void setProperties(map<string, string> &properties);
 
     map<string, string> &getAppProperties();
@@ -101,12 +101,12 @@ public:
     void setSpaces(vector<string> &spaces);
 
     long getVersion();
-    void setVersion(long version);
+    void setVersion(long version);*/
 
     string &getWebContentLink();
     void setWebContentLink(string &webContentLink);
 
-    string &getWebViewLink();
+    /*string &getWebViewLink();
     void setWebViewLink(string &webViewLink);
 
     string &getIconLink();
@@ -116,13 +116,13 @@ public:
     void setHasThumbnail(bool hasThumbnail);
 
     string &getThumbnailLink();
-    void setThumbnailLink(string &thumbnailLink);
+    void setThumbnailLink(string &thumbnailLink);*/
 
-    time_t &getViewedByMeTime();
-    void setViewedByMeTime(time_t &viewedByMeTime);
+    long getViewedByMeTime();
+    void setViewedByMeTime(long viewedByMeTime);
 
-    time_t &getModifiedTime();
-    void setModifiedTime(time_t &modifiedTime);
+    long getModifiedTime();
+    void setModifiedTime(long &modifiedTime);
 
     long getSize();
     void setSize(long size);

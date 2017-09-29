@@ -219,8 +219,17 @@ FilesApi::get(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, str
         thread(FilesApi::download, fileId);
     }
 
-    map<string, string> querystring = { make_pair("acknowledgeAbuse", acknowledgeAbuse ? "true" : "false"), make_pair("supportsTeamDrives", supportsTeamDrives ? "true" : "false"),
-                                        make_pair("alt", alt), make_pair("fields", fields), make_pair("prettyPrint", prettyPrint ? "true" : "false"), make_pair("quotaUser", quotaUser), make_pair("userId", userId) };
+    map<string, string> querystring;
+
+    if(acknowledgeAbuse) querystring.insert(make_pair("acknowledgeAbuse", "true"));
+    if(supportsTeamDrives) querystring.insert(make_pair("supportsTeamDrives", "true"));
+
+    if(!alt.empty()) querystring.insert(make_pair("alt", alt));
+    if(!fields.empty()) querystring.insert(make_pair("fields", fields));
+    if(!prettyPrint) querystring.insert(make_pair("prettyPrint", "false"));
+    if(!quotaUser.empty()) querystring.insert(make_pair("quotaUser", quotaUser));
+    if(!userId.empty()) querystring.insert(make_pair("userId", userId));
+
     map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
 
     string responseBody;

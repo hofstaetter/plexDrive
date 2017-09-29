@@ -187,7 +187,7 @@ API::request(string host, string path, string type, map<string, string> queryStr
         responseBody = decompressed.str();*/
 
         responseHeaders = headerBuffer;
-        cout << "[RESPONSE] "  << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl;
+        cout << "[RESPONSE] "  << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl << responseBody << endl;
     } else {
         size_t len = strlen(errbuf);
         fprintf(stderr, "\nlibcurl: (%d) ", result);

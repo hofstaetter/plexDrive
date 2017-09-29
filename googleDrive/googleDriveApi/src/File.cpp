@@ -14,15 +14,15 @@ File::File() {
 File::File(rapidjson::Document& document) {
     /*this->document = new rapidjson::Document;
     (*this->document).CopyFrom(document, (this->document)->GetAllocator());*/
-    if(document.HasMember("kind"))
-        this->kind = document["kind"].GetString();
+    /*if(document.HasMember("kind"))
+        this->kind = document["kind"].GetString();*/
     if(document.HasMember("id"))
         this->id = document["id"].GetString();
     if(document.HasMember("name"))
         this->name = document["name"].GetString();
     if(document.HasMember("mimeType"))
         this->mimeType = document["mimeType"].GetString();
-    if(document.HasMember("description"))
+    /*if(document.HasMember("description"))
         this->description = document["description"].GetString();
     if(document.HasMember("starred"))
         this->starred = document["starred"].GetBool();
@@ -35,13 +35,13 @@ File::File(rapidjson::Document& document) {
     }
     if(document.HasMember("trashedTime")) {
         this->trashedTime = document["trashedTime"].GetString();
-    }
+    }*/
     if(document.HasMember("parents")) {
         for(auto &p : document["parents"].GetArray()) {
             this->parents.push_back(p.GetString());
         }
     }
-    if(document.HasMember("properties")) {
+    /*if(document.HasMember("properties")) {
         for(rapidjson::Value::ConstMemberIterator itr = document["properties"].MemberBegin(); itr == document["properties"].MemberEnd(); itr++) {
             this->properties.insert(make_pair(itr->name.GetString(), itr->value.GetString()));
         }
@@ -57,32 +57,39 @@ File::File(rapidjson::Document& document) {
         }
     }
     if(document.HasMember("version"))
-        this->version = stol(document["version"].GetString());
+        this->version = stol(document["version"].GetString());*/
     if(document.HasMember("webContentLink"))
         this->webContentLink = document["webContentLink"].GetString();
-    if(document.HasMember("webViewLink"))
+    /*if(document.HasMember("webViewLink"))
         this->webViewLink = document["webViewLink"].GetString();
     if(document.HasMember("iconLink"))
         this->iconLink = document["iconLink"].GetString();
     if(document.HasMember("hasThumbnail"))
         this->hasThumbnail = document["hasThumbnail"].GetBool();
     if(document.HasMember("thumbnailLink"))
-        this->thumbnailLink = document["thumbnailLink"].GetString();
+        this->thumbnailLink = document["thumbnailLink"].GetString();*/
 
-    if(document.HasMember("modifiedTime"))
-        this->modifiedTime = DateTime::toEpoch(document["modifiedTime"].GetString());
+    if(document.HasMember("viewedByMeTime")) {
+        string s = document["viewedByMeTime"].GetString();
+        this->viewedByMeTime = DateTime::toEpoch(s);
+    }
+
+    if(document.HasMember("modifiedTime")) {
+        string s = document["modifiedTime"].GetString();
+        this->modifiedTime = DateTime::toEpoch(s);
+    }
 
     if(document.HasMember("size"))
         this->size = stol(document["size"].GetString());
 }
 
-string &File::getKind() {
+/*string &File::getKind() {
     return kind;
 }
 
 void File::setKind(string &kind) {
     File::kind = kind;
-}
+}*/
 
 string &File::getId() {
     return id;
@@ -108,7 +115,7 @@ void File::setMimeType(string &mimeType) {
     File::mimeType = mimeType;
 }
 
-string &File::getDescription() {
+/*string &File::getDescription() {
     return description;
 }
 
@@ -146,7 +153,7 @@ User &File::getTrashingUser() {
 
 void File::setTrashingUser(User &trashingUser) {
     File::trashingUser = trashingUser;
-}
+}*/
 
 vector<string> &File::getParents() {
     return parents;
@@ -156,7 +163,7 @@ void File::setParents(vector<string> &parents) {
     File::parents = parents;
 }
 
-map<string, string> &File::getProperties() {
+/*map<string, string> &File::getProperties() {
     return properties;
 }
 
@@ -186,7 +193,7 @@ long File::getVersion() {
 
 void File::setVersion(long version) {
     File::version = version;
-}
+}*/
 
 string &File::getWebContentLink() {
     return webContentLink;
@@ -196,7 +203,7 @@ void File::setWebContentLink(string &webContentLink) {
     File::webContentLink = webContentLink;
 }
 
-string &File::getWebViewLink() {
+/*string &File::getWebViewLink() {
     return webViewLink;
 }
 
@@ -226,7 +233,7 @@ string &File::getThumbnailLink() {
 
 void File::setThumbnailLink(string &thumbnailLink) {
     File::thumbnailLink = thumbnailLink;
-}
+}*/
 
 long File::getSize() {
     return size;
@@ -236,11 +243,19 @@ void File::setSize(long size) {
     File::size = size;
 }
 
-time_t &File::getModifiedTime() {
+long File::getViewedByMeTime() {
+    return viewedByMeTime;
+}
+
+void File::setViewedByMeTime(long viewedByMeTime) {
+    File::viewedByMeTime = viewedByMeTime;
+}
+
+long File::getModifiedTime() {
     return modifiedTime;
 }
 
-void File::setModifiedTime(time_t &modifiedTime) {
+void File::setModifiedTime(long &modifiedTime) {
     File::modifiedTime = modifiedTime;
 }
 
@@ -256,22 +271,22 @@ string &File::toString() {
 rapidjson::Document &File::toJSON() {
     rapidjson::Document d(rapidjson::kObjectType);
 
-    d.AddMember(rapidjson::StringRef("kind"), rapidjson::StringRef(this->kind.c_str()), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("kind"), rapidjson::StringRef(this->kind.c_str()), d.GetAllocator());
     d.AddMember(rapidjson::StringRef("id"), rapidjson::StringRef(this->id.c_str()), d.GetAllocator());
     d.AddMember(rapidjson::StringRef("name"), rapidjson::StringRef(this->name.c_str()), d.GetAllocator());
     d.AddMember(rapidjson::StringRef("mimeType"), rapidjson::StringRef(this->mimeType.c_str()), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("description"), rapidjson::StringRef(this->description.c_str()), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("starred"), rapidjson::Value(this->starred), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("trashed"), rapidjson::Value(this->trashed), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("explicitlyTrashed"), rapidjson::Value(this->explicitlyTrashed), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("trashingUser"), this->trashingUser.toJSON(), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("trashedTime"), rapidjson::StringRef(this->trashedTime.c_str()), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("description"), rapidjson::StringRef(this->description.c_str()), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("starred"), rapidjson::Value(this->starred), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("trashed"), rapidjson::Value(this->trashed), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("explicitlyTrashed"), rapidjson::Value(this->explicitlyTrashed), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("trashingUser"), this->trashingUser.toJSON(), d.GetAllocator());
+    //d.AddMember(rapidjson::StringRef("trashedTime"), rapidjson::StringRef(this->trashedTime.c_str()), d.GetAllocator());
     rapidjson::Value i(rapidjson::kArrayType);
     for(string &s : this->parents) {
         i.PushBack(rapidjson::StringRef(s.c_str()), d.GetAllocator());
     }
     d.AddMember(rapidjson::StringRef("parents"), i, d.GetAllocator());
-    rapidjson::Value j(rapidjson::kObjectType);
+    /*rapidjson::Value j(rapidjson::kObjectType);
     for(map<string, string>::iterator it = this->properties.begin(); it != this->properties.end(); ++it) {
         j.AddMember(rapidjson::StringRef(it->first.c_str()), rapidjson::StringRef(it->second.c_str()), d.GetAllocator());
     }
@@ -286,12 +301,14 @@ rapidjson::Document &File::toJSON() {
         l.PushBack(rapidjson::StringRef(s.c_str()), d.GetAllocator());
     }
     d.AddMember(rapidjson::StringRef("spaces"), l, d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("version"), rapidjson::Value((uint64_t)this->version), d.GetAllocator());
+    d.AddMember(rapidjson::StringRef("version"), rapidjson::Value((uint64_t)this->version), d.GetAllocator());*/
     d.AddMember(rapidjson::StringRef("webContentLink"), rapidjson::StringRef(this->webContentLink.c_str()), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("webViewLink"), rapidjson::StringRef(this->webViewLink.c_str()), d.GetAllocator());
+    /*d.AddMember(rapidjson::StringRef("webViewLink"), rapidjson::StringRef(this->webViewLink.c_str()), d.GetAllocator());
     d.AddMember(rapidjson::StringRef("iconLink"), rapidjson::StringRef(this->iconLink.c_str()), d.GetAllocator());
     d.AddMember(rapidjson::StringRef("hasThumbnail"), rapidjson::Value(this->hasThumbnail), d.GetAllocator());
-    d.AddMember(rapidjson::StringRef("trashedTime"), rapidjson::StringRef(this->trashedTime.c_str()), d.GetAllocator());
+    d.AddMember(rapidjson::StringRef("trashedTime"), rapidjson::StringRef(this->trashedTime.c_str()), d.GetAllocator());*/
+    //TODO
+    d.AddMember(rapidjson::StringRef("viewedByMeTime"), rapidjson::StringRef(DateTime::fromEpoch(this->viewedByMeTime).c_str()), d.GetAllocator());
     //TODO
     d.AddMember(rapidjson::StringRef("modifiedTime"), rapidjson::StringRef(DateTime::fromEpoch(this->modifiedTime).c_str()), d.GetAllocator());
     //TODO

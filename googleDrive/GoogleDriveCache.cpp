@@ -22,7 +22,7 @@ void GoogleDriveCache::prepareDb() {
     }
 
     sqlite3_stmt *stmt;
-    resultCode = sqlite3_prepare_v2(database, "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, webContentLink TEXT, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);", -1, &stmt, NULL);
+    resultCode = sqlite3_prepare_v2(database, "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, webContentLink TEXT, viewedByMeTime INTEGER NOT NULL, modifiedTime INTEGET NOT NULL, size INTEGER NOT NULL);", -1, &stmt, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, webContentLink TEXT, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
         sqlite3_close(database);
@@ -101,7 +101,7 @@ void GoogleDriveCache::insert(File f) {
     
     sqlite3_stmt *insertStatement;
 
-    resultCode = sqlite3_prepare_v2(database, "INSERT OR REPLACE INTO file(id, name, mimeType, webContentLink, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);", -1, &insertStatement, NULL);
+    resultCode = sqlite3_prepare_v2(database, "INSERT OR REPLACE INTO file(id, name, mimeType, webContentLink, viewedByMeTime, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7);", -1, &insertStatement, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_prepare_v2(" << "INSERT OR REPLACE INTO file(id, name, mimeType, webContentLink, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);" << ")";
         sqlite3_close(database);
@@ -136,7 +136,16 @@ void GoogleDriveCache::insert(File f) {
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(insertStatement, 5, f.getModifiedTime().c_str(), -1, SQLITE_STATIC);
+    long long int temp = static_cast<long long int>(f.getViewedByMeTime());
+    resultCode = sqlite3_bind_int64(insertStatement, 5, temp);
+    if(resultCode != SQLITE_OK) {
+        cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 5 << ", " << f.getModifiedTime() << ")";
+        sqlite3_close(database);
+        throw -1;
+    }
+
+    temp = static_cast<long long int>(f.getModifiedTime());
+    resultCode = sqlite3_bind_int64(insertStatement, 6, temp);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 5 << ", " << f.getModifiedTime() << ")";
         sqlite3_close(database);
@@ -144,7 +153,7 @@ void GoogleDriveCache::insert(File f) {
     }
     ostringstream ss;
     ss << f.getSize();
-    resultCode = sqlite3_bind_text(insertStatement, 6, ss.str().c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(insertStatement, 7, ss.str().c_str(), -1, SQLITE_STATIC);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 6 << ", " << ss.str() << ")";
         sqlite3_close(database);
@@ -313,10 +322,13 @@ File &GoogleDriveCache::get(string fileId) {
         s = reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 3));
         result.setWebContentLink(s);
 
-        s = reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 4));
-        result.setModifiedTime(s);
+        long temp = (long)sqlite3_column_int64(selectFileStatement, 4);
+        result.setViewedByMeTime(temp);
 
-        result.setSize(sqlite3_column_int(selectFileStatement, 5));
+        temp = (long)sqlite3_column_int64(selectFileStatement, 5);
+        result.setModifiedTime(temp);
+
+        result.setSize(sqlite3_column_int(selectFileStatement, 6));
 
         resultCode = sqlite3_prepare_v2(database, "SELECT FROM parents WHERE child = '?1';", -1, &selectParentsStatement, NULL);
         if(resultCode != SQLITE_OK) {

@@ -5,6 +5,7 @@
 #include <changes/Change.h>
 #include <changes/ChangesApi.h>
 #include <files/File.h>
+#include <files/FilesApi.h>
 #include <fstream>
 #include <thread>
 #include "GoogleDrive.h"
@@ -45,9 +46,6 @@ File GoogleDrive::getFile(string path) {
             }
         }
     }
-
-    vector<string> p = current.getParents();
-    current.setParents(p);
 
     return current;
     /*if(path.empty()) throw -1;
@@ -106,6 +104,8 @@ void GoogleDrive::init() {
     //cout << "GoogleDrive v0.0.1 | Frezy Software Studios";
     GoogleDriveCache::init("/Users/matthias/cache.sqlite");
 
+    GoogleDrive::root = FilesApi::get("root");
+
     GoogleDrive::getChanges();
 }
 
@@ -141,7 +141,7 @@ void GoogleDrive::getChanges() {
         //chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
         cout << "[VERBOSE] Getting changes with page token " << cl.getNextPageToken() << "..." << endl;
 
-        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/webContentLink,changes/file/modifiedTime,changes/file/size,changes/file/parents", false);
+        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/webContentLink,changes/file/viewedByMeTime,changes/file/modifiedTime,changes/file/size,changes/file/parents", false);
 
         //chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
 
