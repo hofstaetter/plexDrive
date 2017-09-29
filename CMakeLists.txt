@@ -31,7 +31,7 @@ endif()
 set(SOURCE_FILES PlexDrive.cpp PlexDrive.h)
 add_executable(plexDrive ${SOURCE_FILES})
 
-target_link_libraries(plexDrive googleDrive googleDriveApi sqlite3)
+target_link_libraries(plexDrive googleDrive googleDriveApi sqlite3 curl)
 if(APPLE)
     target_link_libraries(plexDrive osxfuse)
 endif()

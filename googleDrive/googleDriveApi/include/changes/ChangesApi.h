@@ -13,13 +13,13 @@
 class ChangesApi {
 public:
     static StartPageToken getStartPageToken(bool supportsTeamDrives = false, string teamDriveId = "",
-                                            string alt = "", std::string fields = "", bool prettyPrint = false, std::string quotaUser = "", std::string userId = "");
+                                            string alt = "", std::string fields = "", bool prettyPrint = true, std::string quotaUser = "", std::string userId = "");
     static ChangeList list(string pageToken, bool includeCorpusRemovals = false, bool includeRemoved = true, bool includeTeamDriveItems = false, int pageSize = 100, bool restrictToMyDrive = false, string spaces = "", bool supportsTeamDrives = false,
                                     string teamDriveId = "",
-                                    string alt = "", std::string fields = "", bool prettyPrint = false, std::string quotaUser = "", std::string userId = "");
+                                    string alt = "", std::string fields = "", bool prettyPrint = true, std::string quotaUser = "", std::string userId = "");
     static Channel watch(string pageToken, bool includeCorpusRemovals = false, bool includeRemoved = true, bool includeTeamDriveItems = false, int pageSize = 100, bool restrictToMyDrive = false, string spaces = "", bool supportsTeamDrives = false,
                                       string teamDriveId = "", Channel requestBody = {},
-                                      string alt = "", std::string fields = "", bool prettyPrint = false, std::string quotaUser = "", std::string userId = "");
+                                      string alt = "", std::string fields = "", bool prettyPrint = true, std::string quotaUser = "", std::string userId = "");
 };
 
 

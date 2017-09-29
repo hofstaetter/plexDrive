@@ -20,13 +20,16 @@ ChangesApi::getStartPageToken(bool supportsTeamDrives, string teamDriveId, strin
 
     if(!alt.empty()) querystring.insert(make_pair("alt", alt));
     if(!fields.empty()) querystring.insert(make_pair("fields", fields));
-    if(!prettyPrint) querystring.insert(make_pair("prettyPrint", "false"));
+    /*if(!prettyPrint)*/ querystring.insert(make_pair("prettyPrint", "false"));
     if(!quotaUser.empty()) querystring.insert(make_pair("quotaUser", quotaUser));
     if(!userId.empty()) querystring.insert(make_pair("userId", userId));
 
-    map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
+    //authentication
+    querystring.insert(make_pair("access_token", GoogleOAuth::getAccessToken()));
 
-    long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes/startPageToken", "GET", querystring, headers, {}, "", responseHeaders, responseBody);
+    //map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
+
+    long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes/startPageToken", "GET", querystring, {}, {}, "", responseHeaders, responseBody);
 
     rapidjson::Document responseJson;
     rapidjson::ParseResult pr = responseJson.Parse(responseBody.c_str());
@@ -56,19 +59,23 @@ ChangeList ChangesApi::list(string pageToken, bool includeCorpusRemovals, bool i
     if(includeTeamDriveItems) querystring.insert(make_pair("includeTeamDriveItems", "true"));
     if(pageSize != 100) querystring.insert(make_pair("pageSize", to_string(pageSize)));
     if(restrictToMyDrive) querystring.insert(make_pair("restrictToMyDrive", "true"));
-    if(!spaces.empty()) querystring.insert(make_pair("spaces", spaces));
+    if(!spaces.empty())
+        querystring.insert(make_pair("spaces", spaces));
     if(supportsTeamDrives) querystring.insert(make_pair("supportsTeamDrives", "true"));
     if(!teamDriveId.empty()) querystring.insert(make_pair("teamDriveId", teamDriveId));
 
     if(!alt.empty()) querystring.insert(make_pair("alt", alt));
     if(!fields.empty()) querystring.insert(make_pair("fields", fields));
-    if(!prettyPrint) querystring.insert(make_pair("prettyPrint", "false"));
+    /*if(!prettyPrint)*/ querystring.insert(make_pair("prettyPrint", "false"));
     if(!quotaUser.empty()) querystring.insert(make_pair("quotaUser", quotaUser));
     if(!userId.empty()) querystring.insert(make_pair("userId", userId));
 
-    map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
+    //authentication
+    querystring.insert(make_pair("access_token", GoogleOAuth::getAccessToken()));
 
-    long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes", "GET", querystring, headers, {}, "", responseHeaders, responseBody);
+    //map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
+
+    long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes", "GET", querystring, {}, {}, "", responseHeaders, responseBody);
 
     rapidjson::Document responseJson;
     rapidjson::ParseResult pr = responseJson.Parse(responseBody.c_str());

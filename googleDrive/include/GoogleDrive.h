@@ -15,7 +15,7 @@ private:
 
     static File root;
     static string pageToken;
-    static void workOffChanges();
+    static void getChanges();
 public:
     static File getFile(string path);
     static vector<File> getDirectory(string path);

@@ -21,7 +21,7 @@ add_subdirectory(googleDriveApi)
 set(SOURCE_FILES src/GoogleDrive.cpp include/GoogleDrive.h GoogleDriveCache.cpp GoogleDriveCache.h)
 add_library(googleDrive ${SOURCE_FILES})
 
-target_link_libraries(googleDrive googleDriveApi)
+target_link_libraries(googleDrive googleDriveApi curl)
 
 if(Boost_FOUND)
     target_link_libraries(googleDriveApi ${Boost_LIBRARIES})

@@ -44,7 +44,9 @@ private:
     bool hasThumbnail;
     string thumbnailLink;
     //TODO
-    string modifiedTime;
+    time_t viewedByMeTime;
+    //TODO
+    time_t modifiedTime;
     //TODO
     long size;
     //TODO
@@ -116,8 +118,11 @@ public:
     string &getThumbnailLink();
     void setThumbnailLink(string &thumbnailLink);
 
-    string &getModifiedTime();
-    void setModifiedTime(string &modifiedTime);
+    time_t &getViewedByMeTime();
+    void setViewedByMeTime(time_t &viewedByMeTime);
+
+    time_t &getModifiedTime();
+    void setModifiedTime(time_t &modifiedTime);
 
     long getSize();
     void setSize(long size);

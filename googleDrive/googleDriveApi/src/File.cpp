@@ -5,6 +5,7 @@
 #include "files/File.h"
 #include "document.h"
 #include <vector>
+#include <DateTime.h>
 
 File::File() {
     //this->document = new rapidjson::Document;
@@ -69,7 +70,7 @@ File::File(rapidjson::Document& document) {
         this->thumbnailLink = document["thumbnailLink"].GetString();
 
     if(document.HasMember("modifiedTime"))
-        this->modifiedTime = document["modifiedTime"].GetString();
+        this->modifiedTime = DateTime::toEpoch(document["modifiedTime"].GetString());
 
     if(document.HasMember("size"))
         this->size = stol(document["size"].GetString());
@@ -235,11 +236,11 @@ void File::setSize(long size) {
     File::size = size;
 }
 
-string &File::getModifiedTime() {
+time_t &File::getModifiedTime() {
     return modifiedTime;
 }
 
-void File::setModifiedTime(string &modifiedTime) {
+void File::setModifiedTime(time_t &modifiedTime) {
     File::modifiedTime = modifiedTime;
 }
 
@@ -292,7 +293,7 @@ rapidjson::Document &File::toJSON() {
     d.AddMember(rapidjson::StringRef("hasThumbnail"), rapidjson::Value(this->hasThumbnail), d.GetAllocator());
     d.AddMember(rapidjson::StringRef("trashedTime"), rapidjson::StringRef(this->trashedTime.c_str()), d.GetAllocator());
     //TODO
-    d.AddMember(rapidjson::StringRef("modifiedTime"), rapidjson::StringRef(this->modifiedTime.c_str()), d.GetAllocator());
+    d.AddMember(rapidjson::StringRef("modifiedTime"), rapidjson::StringRef(DateTime::fromEpoch(this->modifiedTime).c_str()), d.GetAllocator());
     //TODO
     d.AddMember(rapidjson::StringRef("size"), rapidjson::Value((uint64_t)this->size), d.GetAllocator());
     //TODO

@@ -102,7 +102,7 @@ writeHeaderBuffer(char *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 long
-API::request(string host, string path, string type, map<string, string> querystring, map<string, string> header, map<string, string> postfields, string body, string& responseHeaders, string& responseBody) {
+API::request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string& responseHeaders, string& responseBody) {
     CURL *req = curl_easy_init();
 
     curl_global_init(CURL_GLOBAL_ALL);
@@ -112,7 +112,7 @@ API::request(string host, string path, string type, map<string, string> querystr
     //curl_version_info_data *d = curl_version_info(CURLVERSION_NOW);
 
     //debug
-    curl_easy_setopt(req, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(req, CURLOPT_VERBOSE, 1L);
 
     //error
     char errbuf[CURL_ERROR_SIZE];
@@ -121,76 +121,53 @@ API::request(string host, string path, string type, map<string, string> querystr
     //timeout
     curl_easy_setopt(req, CURLOPT_TIMEOUT, 5);
 
-    curl_easy_setopt(req, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
     //build & set url
     string url;
-    bool first = true;
 
-    url.append(host); //url static
+    url.append(host);
     url.append(path);
-    for(auto &p : querystring) {
-        if(p.second.compare("") == 0) continue;
-        if(first) {
-            url.append("?");
-            first = false;
-        } else url.append("&");
-        //url.append(curl_easy_escape(req, p.first.c_str(), p.first.length())).append("=").append(curl_easy_escape(req, p.second.c_str(), p.second.length()));
-        url.append(p.first.c_str()).append("=").append(p.second.c_str());
+    for(auto &p : queryString) {
+        url.append((url.find("?") == string::npos) ? "?" : "&").append(p.first.c_str()).append("=").append(p.second.c_str());
     }
     curl_easy_setopt(req, CURLOPT_URL, url.c_str());
 
-    //curl_easy_setopt(req, CURLOPT_SSL_VERIFYHOST, 0L);
 
-    long contentlength = 0;
-
-    //set postfields
-    string pf = "";
+    //set postFields
+    string postfields;
     if(type.compare("POST") == 0) {
-        first = true;
-        for(auto p : postfields) {
-            if(!first) {
-                pf.append("&");
-            }
-            pf.append(p.first);
-            pf.append("=");
-            pf.append(p.second.c_str());
-            first = false;
+        for(auto &p : postFields) {
+            postfields.append((postfields.empty()) ? "" : "&").append(p.first).append("=").append(p.second.c_str());
         }
-        curl_easy_setopt(req, CURLOPT_POSTFIELDS, pf.c_str());
-        curl_easy_setopt(req, CURLOPT_POSTFIELDSIZE, pf.length());
-        contentlength += pf.length();
+        curl_easy_setopt(req, CURLOPT_POSTFIELDS, postfields.c_str());
+        curl_easy_setopt(req, CURLOPT_POSTFIELDSIZE, postfields.length());
     }
+
+
+    //set headers
+    struct curl_slist *headers=NULL;
+    headers = curl_slist_append(headers, ("Host: " + host.substr(host.find("://", 0) + 3, host.length() - host.find("://", 0))).c_str());
+    headers = curl_slist_append(headers, ("Content-length: " + to_string(body.length() + postfields.length())).c_str());
+    headers = curl_slist_append(headers, "Connection: close");
+    headers = curl_slist_append(headers, "User-Agent: plexDrive");
+    for(auto &p : header) {
+        headers = curl_slist_append(headers, (p.first + ": " + p.second).c_str());
+    }
+    curl_easy_setopt(req, CURLOPT_HTTPHEADER, headers);
+
 
     //write response to buffer
     curl_easy_setopt(req, CURLOPT_WRITEFUNCTION, writeBodyBuffer);
     curl_easy_setopt(req, CURLOPT_HEADERFUNCTION, writeHeaderBuffer);
 
-    //set headers
-    struct curl_slist *headers=NULL;
-    headers = curl_slist_append(headers, ("Host: " + host.substr(host.find("://", 0) + 3, host.length() - host.find("://", 0))).c_str());
+    //verbose
+    cout << "[REQUEST] "  << type << " " << url << endl;
 
-    contentlength += body.length();
-    headers = curl_slist_append(headers, ("Content-length: " + to_string(contentlength)).c_str());
-    headers = curl_slist_append(headers, "Connection: close");
-    //headers = curl_slist_append(headers, "Accept-Encoding: gzip");
-    headers = curl_slist_append(headers, "User-Agent: plexDrive");
-    for(auto p : header) {
-        headers = curl_slist_append(headers, (p.first + ": " + p.second).c_str());
-    }
-    curl_easy_setopt(req, CURLOPT_HTTPHEADER, headers);
-
-    //chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
-    //chrono::milliseconds ms =chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-    cout << "[REQUEST] "  << type << " " << url << endl << pf << endl << body << endl;
-
+    //perform
     CURLcode result = curl_easy_perform(req);
 
-    //chrono::high_resolution_clock::time_point t3 = chrono::high_resolution_clock::now();
-
-    if(result == CURLE_OPERATION_TIMEDOUT) return API::request(host, path, type, querystring, header, postfields, body, responseHeaders, responseBody);
     long statuscode;
-    if(result == CURLE_OK) {
+    if(result == CURLE_OK || result == CURLE_RECV_ERROR) {
         //get http status code
         curl_easy_getinfo(req, CURLINFO_RESPONSE_CODE, &statuscode);
 
@@ -210,7 +187,7 @@ API::request(string host, string path, string type, map<string, string> querystr
         responseBody = decompressed.str();*/
 
         responseHeaders = headerBuffer;
-        cout << "[RESPONSE] "  << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl << responseBody << endl;
+        cout << "[RESPONSE] "  << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl;
     } else {
         size_t len = strlen(errbuf);
         fprintf(stderr, "\nlibcurl: (%d) ", result);
@@ -229,7 +206,7 @@ API::request(string host, string path, string type, map<string, string> querystr
     headerBuffer.clear();
 
     //retry
-    //if(statuscode == 500) return request(host, path, type, querystring, header, postfields, body, responseHeaders, responseBody);
+    //if(statuscode == 500) return request(host, path, type, queryString, header, postFields, body, responseHeaders, responseBody);
 
     return statuscode;
 }

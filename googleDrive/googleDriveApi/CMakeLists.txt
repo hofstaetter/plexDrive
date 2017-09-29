@@ -22,13 +22,9 @@ include_directories(include rapidjson/include/rapidjson)
 file(GLOB SOURCE_FILES
         include/*.h
         src/*.cpp)
-add_library(googleDriveApi ${SOURCE_FILES})
+add_library(googleDriveApi ${SOURCE_FILES} )
 
+target_link_libraries(googleDriveApi curl)
 if(Boost_FOUND)
-    message("${Boost_LIBRARIES}")
     target_link_libraries(googleDriveApi ${Boost_LIBRARIES})
-endif()
-
-if(CURL_FOUND)
-    target_link_libraries(googleDriveApi ${CURL_LIBRARIES})
 endif()

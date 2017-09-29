@@ -34,8 +34,6 @@ std::vector<std::string> splitPath(const std::string &s, char delim) {
 }
 
 File GoogleDrive::getFile(string path) {
-    cout << "GoogleDrive::getFile called with " << path;
-
     File current = GoogleDrive::root;
     vector<string> folders = splitPath(path, '/');
     folders = vector<string>(folders.begin() + 1, folders.end());
@@ -51,7 +49,6 @@ File GoogleDrive::getFile(string path) {
     vector<string> p = current.getParents();
     current.setParents(p);
 
-    cout << "GoogleDrive::getFile returns " << current.getId();
     return current;
     /*if(path.empty()) throw -1;
     if(fileCache.size() < 1)
@@ -96,14 +93,12 @@ File GoogleDrive::getFile(string path) {
 }
 
 vector<File> GoogleDrive::getDirectory(string path) {
-    cout << "GoogleDrive::getDirectory called with " << path;
     vector<File> result;
 
     for(string s : GoogleDriveCache::getChildren(getFile(path).getId())) {
         result.push_back(GoogleDriveCache::get(s));
     }
 
-    cout << "GoogleDrive::getFile resturns";
     return result;
 }
 
@@ -111,10 +106,11 @@ void GoogleDrive::init() {
     //cout << "GoogleDrive v0.0.1 | Frezy Software Studios";
     GoogleDriveCache::init("/Users/matthias/cache.sqlite");
 
-    GoogleDrive::workOffChanges();
+    GoogleDrive::getChanges();
 }
 
-void GoogleDrive::workOffChanges() {
+void GoogleDrive::getChanges() {
+    cout << "[VERBOSE] Updating cache..." << endl;
     if(GoogleDrive::pageToken.empty()) {
         GoogleDrive::pageToken = "1";
         rapidjson::Document configuration(rapidjson::kObjectType);
@@ -132,17 +128,22 @@ void GoogleDrive::workOffChanges() {
         }
     }
 
-    //%
+    if(ChangesApi::getStartPageToken().getStartPageToken().c_str() == GoogleDrive::pageToken) {
+        cout << "[VERBOSE] Cache already up to date." << endl;
+        return;
+    }
+
     long end = atol(ChangesApi::getStartPageToken().getStartPageToken().c_str());
 
     ChangeList cl;
     cl.setNextPageToken(GoogleDrive::pageToken);
     while(!cl.getNextPageToken().empty()) {
-        chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+        //chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+        cout << "[VERBOSE] Getting changes with page token " << cl.getNextPageToken() << "..." << endl;
 
-        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/webContentLink,changes/file/modifiedTime,changes/file/size,changes/file/parents");
+        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/webContentLink,changes/file/modifiedTime,changes/file/size,changes/file/parents", false);
 
-        chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
+        //chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
 
         for(Change c : cl.getChanges()) {
             if(c.isRemoved()) {
@@ -151,6 +152,8 @@ void GoogleDrive::workOffChanges() {
                 GoogleDriveCache::insert(c.getFile());
             }
         }
+
+        cout << "[VERBOSE] Updated " << cl.getChanges().size() << " items." << endl;
 
         rapidjson::Document configuration(rapidjson::kObjectType);
         if(cl.getNextPageToken().empty())
@@ -167,11 +170,11 @@ void GoogleDrive::workOffChanges() {
         file << configurationstring;
         file.close();
 
-        chrono::high_resolution_clock::time_point t3 = chrono::high_resolution_clock::now();
+        /*chrono::high_resolution_clock::time_point t3 = chrono::high_resolution_clock::now();
 
         chrono::duration<double, milli> d1 = t2 - t1;
         chrono::duration<double, milli> d2 = t3 - t2;
-        cout << "Request: " << d1.count() << " ms | Fetch: " << d2.count() << " ms | Done: " << (atol(cl.getNextPageToken().c_str()) / (end / 100)) << "%" << endl;
+        cout << "Request: " << d1.count() << " ms | Fetch: " << d2.count() << " ms | Done: " << (atol(cl.getNextPageToken().c_str()) / end) << "%" << endl;*/
     }
     GoogleDrive::pageToken = cl.getNewStartPageToken();
 }

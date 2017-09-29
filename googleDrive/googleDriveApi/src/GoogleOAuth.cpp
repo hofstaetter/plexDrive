@@ -19,8 +19,7 @@ void GoogleOAuth::requestAuthorizationCode(string clientId, string redirectUri, 
     string responseBody;
     string responseHeaders;
     long httpcode = API::request("https://accounts.google.com", "/o/oauth2/v2/auth", "POST", { make_pair("response_type", responseType), make_pair("client_id", clientId), make_pair("redirect_uri", redirectUri),
-                                                                                                 make_pair("scope", scope) },
-                                            { make_pair("content-type", "application/x-www-form-urlencoded") },
+                                                                                                 make_pair("scope", scope) }, {},
                                             {}, //{ make_pair("code", authCode), make_pair("client_id", clientId), make_pair("client_secret", clientSecret), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("grant_type", "authorization_code") },
                                             "", responseHeaders, responseBody);
 
@@ -39,8 +38,8 @@ void GoogleOAuth::requestTokens(string clientId, string clientSecret) {
 
     string responseHeaders;
     string responseBody;
-    long httpcode = API::request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { },
-                                            { make_pair("content-type", "application/x-www-form-urlencoded") },
+    long httpcode = API::request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { make_pair("prettyPrint", "false") },
+                                            { },
                                             { make_pair("grant_type", "authorization_code"), make_pair("code", GoogleOAuth::authorizationCode), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("client_id", clientId), make_pair("client_secret", clientSecret) }, //{ make_pair("code", authCode), make_pair("client_id", clientId), make_pair("client_secret", clientSecret), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("grant_type", "authorization_code") },
                                             "", responseHeaders, responseBody);
     //{ make_pair("grant_type", "authorization_code"), make_pair("code", authCode), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("client_id", clientId), make_pair("client_secret", clientSecret) }
@@ -72,8 +71,8 @@ void GoogleOAuth::refreshAccessToken(string clientSecret, string grantType, stri
     string responseHeaders;
     string responseBody;
 
-    long httpcode = API::request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { },
-                                   { make_pair("content-type", "application/x-www-form-urlencoded") },
+    long httpcode = API::request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { make_pair("prettyPrint", "false") },
+                                 { },
                                    { make_pair("grant_type", "refresh_token"), make_pair("refresh_token", GoogleOAuth::refreshToken), make_pair("client_id", clientId), make_pair("client_secret", clientSecret) }, //{ make_pair("code", authCode), make_pair("client_id", clientId), make_pair("client_secret", clientSecret), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("grant_type", "authorization_code") },
                                    "", responseHeaders, responseBody);
 
