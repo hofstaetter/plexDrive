@@ -5,7 +5,7 @@
 #ifndef GOOGLEDRIVEAPI_FILESRESOURCE_H
 #define GOOGLEDRIVEAPI_FILESRESOURCE_H
 
-#include "files/Files.h"
+#include "files/FilesApi.h"
 #include "User.h"
 #include "files/ImageMediaMetadata.h"
 #include "files/VideoMediaMetadata.h"

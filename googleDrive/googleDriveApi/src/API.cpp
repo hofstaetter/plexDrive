@@ -5,6 +5,11 @@
 #include <iostream>
 #include "API.h"
 #include <chrono>
+#include <thread>
+#include <sstream>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using namespace std;
 
@@ -79,7 +84,7 @@ int my_trace(CURL *handle, curl_infotype type,
     return 0;
 }
 
-string bodyBuffer;
+string bodyBuffer = "";
 string headerBuffer;
 
 size_t
@@ -98,17 +103,25 @@ writeHeaderBuffer(char *ptr, size_t size, size_t nmemb, void *stream)
 
 long
 API::request(string host, string path, string type, map<string, string> querystring, map<string, string> header, map<string, string> postfields, string body, string& responseHeaders, string& responseBody) {
-    //chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
     CURL *req = curl_easy_init();
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    curl_easy_setopt(req, CURLOPT_DEBUGFUNCTION, my_trace);
+    //curl_easy_setopt(req, CURLOPT_DEBUGFUNCTION, my_trace);
 
-    curl_version_info_data *d = curl_version_info(CURLVERSION_NOW);
+    //curl_version_info_data *d = curl_version_info(CURLVERSION_NOW);
 
     //debug
     curl_easy_setopt(req, CURLOPT_VERBOSE, 1L);
+
+    //error
+    char errbuf[CURL_ERROR_SIZE];
+    curl_easy_setopt(req, CURLOPT_ERRORBUFFER, errbuf);
+
+    //timeout
+    curl_easy_setopt(req, CURLOPT_TIMEOUT, 5);
+
+    curl_easy_setopt(req, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
     //build & set url
     string url;
@@ -122,12 +135,12 @@ API::request(string host, string path, string type, map<string, string> querystr
             url.append("?");
             first = false;
         } else url.append("&");
-        url.append(curl_easy_escape(req, p.first.c_str(), p.first.length())).append("=").append(curl_easy_escape(req, p.second.c_str(), p.second.length()));
-        //url.append(p.first.c_str()).append("=").append(p.second.c_str());
+        //url.append(curl_easy_escape(req, p.first.c_str(), p.first.length())).append("=").append(curl_easy_escape(req, p.second.c_str(), p.second.length()));
+        url.append(p.first.c_str()).append("=").append(p.second.c_str());
     }
     curl_easy_setopt(req, CURLOPT_URL, url.c_str());
 
-    curl_easy_setopt(req, CURLOPT_SSL_VERIFYHOST, 0L);
+    //curl_easy_setopt(req, CURLOPT_SSL_VERIFYHOST, 0L);
 
     long contentlength = 0;
 
@@ -160,52 +173,63 @@ API::request(string host, string path, string type, map<string, string> querystr
     contentlength += body.length();
     headers = curl_slist_append(headers, ("Content-length: " + to_string(contentlength)).c_str());
     headers = curl_slist_append(headers, "Connection: close");
+    //headers = curl_slist_append(headers, "Accept-Encoding: gzip");
+    headers = curl_slist_append(headers, "User-Agent: plexDrive");
     for(auto p : header) {
         headers = curl_slist_append(headers, (p.first + ": " + p.second).c_str());
     }
     curl_easy_setopt(req, CURLOPT_HTTPHEADER, headers);
 
     //chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
-    chrono::milliseconds ms =chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
-    cout << ms.count() << " [REQUEST] "  << type << " " << url << endl << pf << endl << body << endl;
+    //chrono::milliseconds ms =chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch());
+    cout << "[REQUEST] "  << type << " " << url << endl << pf << endl << body << endl;
 
     CURLcode result = curl_easy_perform(req);
 
     //chrono::high_resolution_clock::time_point t3 = chrono::high_resolution_clock::now();
 
+    if(result == CURLE_OPERATION_TIMEDOUT) return API::request(host, path, type, querystring, header, postfields, body, responseHeaders, responseBody);
     long statuscode;
-    if(result == CURLE_OK || result == CURLE_RECV_ERROR) {
+    if(result == CURLE_OK) {
         //get http status code
         curl_easy_getinfo(req, CURLINFO_RESPONSE_CODE, &statuscode);
 
         responseBody = bodyBuffer;
 
+        //gzip
+        /*namespace bio = boost::iostreams;
+
+        std::stringstream compressed(bodyBuffer);
+        std::stringstream decompressed;
+
+        bio::filtering_streambuf<bio::input> out;
+        out.push(bio::gzip_decompressor());
+        out.push(compressed);
+        boost::iostreams::copy(out, decompressed);
+
+        responseBody = decompressed.str();*/
+
         responseHeaders = headerBuffer;
-        cout << ms.count() << " [RESPONSE] "  << type << " " << host << path << endl << responseBody << endl;
+        cout << "[RESPONSE] "  << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl << responseBody << endl;
     } else {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(result));
+        size_t len = strlen(errbuf);
+        fprintf(stderr, "\nlibcurl: (%d) ", result);
+        if(len)
+            fprintf(stderr, "%s%s", errbuf,
+                    ((errbuf[len - 1] != '\n') ? "\n" : ""));
+        else
+            fprintf(stderr, "%s\n", curl_easy_strerror(result));
     }
 
     curl_slist_free_all(headers);
 
     curl_easy_cleanup(req);
 
-    //debug
-    //cout << bodyBuffer << endl;
-
     bodyBuffer.clear();
     headerBuffer.clear();
 
     //retry
-    if(statuscode == 500) return request(host, path, type, querystring, header, postfields, body, responseHeaders, responseBody);
-
-    //chrono::high_resolution_clock::time_point t4 = chrono::high_resolution_clock::now();
-
-    //chrono::duration<double, milli> d1 = t2 - t1;
-    //chrono::duration<double, milli> d2 = t3 - t2;
-    //chrono::duration<double, milli> d3 = t4 - t3;
-
-    //cout << "[HTTPSREQUEST] Prepare: " << d1.count() << " ms | Execute: " << d2.count() << " ms | Finish: " << d3.count() << " ms" << endl;
+    //if(statuscode == 500) return request(host, path, type, querystring, header, postfields, body, responseHeaders, responseBody);
 
     return statuscode;
 }

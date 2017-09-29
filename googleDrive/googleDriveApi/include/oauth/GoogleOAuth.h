@@ -8,7 +8,7 @@
 #include <string>
 #include <rapidjson.h>
 #include <document.h>
-#include <files/Files.h>
+#include <files/FilesApi.h>
 #include <API.h>
 
 using namespace std;

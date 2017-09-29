@@ -5,7 +5,7 @@
 #ifndef GOOGLEDRIVEAPI_LISTRESPONSE_H
 #define GOOGLEDRIVEAPI_LISTRESPONSE_H
 
-#include "files/Files.h"
+#include "files/FilesApi.h"
 #include "File.h"
 #include <rapidjson.h>
 #include <document.h>

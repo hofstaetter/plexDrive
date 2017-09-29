@@ -5,17 +5,25 @@
 #include "changes/ChangesApi.h"
 
 StartPageToken
-ChangesApi::getStartPageToken(bool supportsTeamDrives, string teamDriveId, bool alt, string fields, bool prettyPrint,
+ChangesApi::getStartPageToken(bool supportsTeamDrives, string teamDriveId, string alt, string fields, bool prettyPrint,
                            string quotaUser, string userId) {
-    if(GoogleOAuth::isAuthenticated()) {
+    if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
     }
 
     string responseBody;
     string responseHeaders;
 
-    map<string, string> querystring = { make_pair("supportsTeamDrives", supportsTeamDrives ? "true" : "false"), make_pair("teamDriveId", teamDriveId),
-                                        make_pair("alt", alt  ? "" : "json"), make_pair("fields", fields), make_pair("prettyPrint", prettyPrint ? "true" : "false"), make_pair("quotaUser", quotaUser), make_pair("userId", userId) };
+    map<string, string> querystring;
+    if(supportsTeamDrives) querystring.insert(make_pair("supportsTeamDrives", "true"));
+    if(!teamDriveId.empty()) querystring.insert(make_pair("teamDriveId", teamDriveId));
+
+    if(!alt.empty()) querystring.insert(make_pair("alt", alt));
+    if(!fields.empty()) querystring.insert(make_pair("fields", fields));
+    if(!prettyPrint) querystring.insert(make_pair("prettyPrint", "false"));
+    if(!quotaUser.empty()) querystring.insert(make_pair("quotaUser", quotaUser));
+    if(!userId.empty()) querystring.insert(make_pair("userId", userId));
+
     map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
 
     long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes/startPageToken", "GET", querystring, headers, {}, "", responseHeaders, responseBody);
@@ -33,19 +41,31 @@ ChangesApi::getStartPageToken(bool supportsTeamDrives, string teamDriveId, bool 
 
 ChangeList ChangesApi::list(string pageToken, bool includeCorpusRemovals, bool includeRemoved, bool includeTeamDriveItems,
                          int pageSize, bool restrictToMyDrive, string spaces, bool supportsTeamDrives,
-                         string teamDriveId, bool alt, string fields, bool prettyPrint, string quotaUser,
+                         string teamDriveId, string alt, string fields, bool prettyPrint, string quotaUser,
                          string userId) {
-    if(GoogleOAuth::isAuthenticated()) {
+    if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
     }
 
     string responseBody;
     string responseHeaders;
 
-    map<string, string> querystring = { make_pair("pageToken", pageToken), make_pair("includeCorpusRemovals", includeCorpusRemovals ? "true" : "false"), make_pair("includeRemoved", includeRemoved ? "true" : "false"),
-                                        make_pair("includeTeamDriveItems", includeTeamDriveItems ? "true" : "false"), make_pair("pageSize", to_string(pageSize)), make_pair("restrictToMyDrive", restrictToMyDrive ? "true" : "false"),
-                                        make_pair("spaces", spaces), make_pair("supportsTeamDrives", supportsTeamDrives ? "true" : "false"), make_pair("teamDriveId", teamDriveId),
-                                        make_pair("alt", alt  ? "" : "json"), make_pair("fields", fields), make_pair("prettyPrint", prettyPrint ? "true" : "false"), make_pair("quotaUser", quotaUser), make_pair("userId", userId) };
+    map<string, string> querystring = { make_pair("pageToken", pageToken) };
+    if(includeCorpusRemovals) querystring.insert(make_pair("includeCorpusRemovals", "true"));
+    if(!includeRemoved) querystring.insert(make_pair("includeRemoved", "false"));
+    if(includeTeamDriveItems) querystring.insert(make_pair("includeTeamDriveItems", "true"));
+    if(pageSize != 100) querystring.insert(make_pair("pageSize", to_string(pageSize)));
+    if(restrictToMyDrive) querystring.insert(make_pair("restrictToMyDrive", "true"));
+    if(!spaces.empty()) querystring.insert(make_pair("spaces", spaces));
+    if(supportsTeamDrives) querystring.insert(make_pair("supportsTeamDrives", "true"));
+    if(!teamDriveId.empty()) querystring.insert(make_pair("teamDriveId", teamDriveId));
+
+    if(!alt.empty()) querystring.insert(make_pair("alt", alt));
+    if(!fields.empty()) querystring.insert(make_pair("fields", fields));
+    if(!prettyPrint) querystring.insert(make_pair("prettyPrint", "false"));
+    if(!quotaUser.empty()) querystring.insert(make_pair("quotaUser", quotaUser));
+    if(!userId.empty()) querystring.insert(make_pair("userId", userId));
+
     map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
 
     long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes", "GET", querystring, headers, {}, "", responseHeaders, responseBody);
@@ -63,7 +83,7 @@ ChangeList ChangesApi::list(string pageToken, bool includeCorpusRemovals, bool i
 
 Channel ChangesApi::watch(string pageToken, bool includeCorpusRemovals, bool includeRemoved, bool includeTeamDriveItems,
                        int pageSize, bool restrictToMyDrive, string spaces, bool supportsTeamDrives, string teamDriveId,
-                       Channel requestBody, bool alt, string fields, bool prettyPrint, string quotaUser,
+                       Channel requestBody, string alt, string fields, bool prettyPrint, string quotaUser,
                        string userId) {
     return Channel();
 }

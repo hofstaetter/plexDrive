@@ -6,6 +6,7 @@
 #define PLEXDRIVE_GOOGLEDRIVEAPI_H
 
 class GoogleDriveApi {
+    static int VERBOSE;
 };
 
 

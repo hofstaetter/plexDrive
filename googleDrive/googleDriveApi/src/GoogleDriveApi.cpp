@@ -3,3 +3,5 @@
 //
 
 #include "GoogleDriveApi.h"
+
+int GoogleDriveApi::VERBOSE = 0;

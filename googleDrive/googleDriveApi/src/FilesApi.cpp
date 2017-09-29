@@ -3,12 +3,12 @@
 //
 
 #include <thread>
-#include "files/Files.h"
+#include "files/FilesApi.h"
 
 using namespace std;
 
 FileList
-Files::list(string corpora, string corpus, bool includeTeamDriveItems, string orderBy, int pageSize, string pageToken, string q, string spaces, bool supportsTeamDrives, string teamDriveId,
+FilesApi::list(string corpora, string corpus, bool includeTeamDriveItems, string orderBy, int pageSize, string pageToken, string q, string spaces, bool supportsTeamDrives, string teamDriveId,
                      string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -16,10 +16,24 @@ Files::list(string corpora, string corpus, bool includeTeamDriveItems, string or
 
     string responseBody;
     string responseHeaders;
-    map<string, string> querystring = { /*make_pair("corpora", corpora), make_pair("corpus", corpus),*/ /*make_pair("includeTeamDriveItems", includeTeamDriveItems ? "true" : "false"), make_pair("orderBy", orderBy),*/
-                                        make_pair("pageSize", to_string(pageSize)), make_pair("pageToken", pageToken), make_pair("q", q), /*make_pair("spaces", spaces), make_pair("supportsTeamDrives", supportsTeamDrives ? "true" : "false"),
-                                        make_pair("teamDriveId", teamDriveId),
-                                        make_pair("alt", alt),*/ make_pair("fields", fields), /*make_pair("prettyPrint", prettyPrint ? "true" : "false"), make_pair("quotaUser", quotaUser), make_pair("userId", userId)*/ };
+    map<string, string> querystring;
+    if(!corpora.empty()) querystring.insert(make_pair("corpora", corpora));
+    if(!corpus.empty()) querystring.insert(make_pair("corpus", corpus));
+    if(includeTeamDriveItems) querystring.insert(make_pair("includeTeamDriveItems", "true"));
+    if(!orderBy.empty()) querystring.insert(make_pair("orderBy", orderBy));
+    if(pageSize != 100) querystring.insert(make_pair("pageSize", to_string(pageSize)));
+    if(!pageToken.empty()) querystring.insert(make_pair("pageToken", pageToken));
+    if(!q.empty()) querystring.insert(make_pair("q", q));
+    if(!spaces.empty()) querystring.insert(make_pair("spaces", spaces));
+    if(supportsTeamDrives) querystring.insert(make_pair("supportsTeamDrive", "true"));
+    if(!teamDriveId.empty()) querystring.insert(make_pair("teamDriveId", teamDriveId));
+
+    if(!alt.empty()) querystring.insert(make_pair("alt", alt));
+    if(!fields.empty()) querystring.insert(make_pair("fields", fields));
+    if(!prettyPrint) querystring.insert(make_pair("prettyPrint", "false"));
+    if(!quotaUser.empty()) querystring.insert(make_pair("quotaUser", quotaUser));
+    if(!userId.empty()) querystring.insert(make_pair("userId", userId));
+
     map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
     long responseCode = API::request("https://www.googleapis.com", "/drive/v3/files", "GET", querystring,
                                                 headers, {}, "", responseHeaders, responseBody);
@@ -40,7 +54,7 @@ Files::list(string corpora, string corpus, bool includeTeamDriveItems, string or
 }
 
 File
-Files::copy(string fileId, bool ignoreDefaultVisibility, bool keepRevisionForever, string ocrLanguage, bool supportsTeamDrives, File& requestBody,
+FilesApi::copy(string fileId, bool ignoreDefaultVisibility, bool keepRevisionForever, string ocrLanguage, bool supportsTeamDrives, File& requestBody,
                      string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -65,7 +79,7 @@ Files::copy(string fileId, bool ignoreDefaultVisibility, bool keepRevisionForeve
 }
 
 File
-Files::create(string uploadType, bool ignoreDefaultVisibility, bool keepRevisionForever, string ocrLanguage, bool supportsTeamDrives, bool useContentAsIndexableText, File& requestBody,
+FilesApi::create(string uploadType, bool ignoreDefaultVisibility, bool keepRevisionForever, string ocrLanguage, bool supportsTeamDrives, bool useContentAsIndexableText, File& requestBody,
                        string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!(uploadType.compare("media") == 0 || uploadType.compare("multipart") == 0 || uploadType.compare("resumable") == 0)) {
         throw -1;
@@ -99,7 +113,7 @@ Files::create(string uploadType, bool ignoreDefaultVisibility, bool keepRevision
 }
 
 bool
-Files::del(string fileId, bool supportsTeamDrives,
+FilesApi::del(string fileId, bool supportsTeamDrives,
                     string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -118,7 +132,7 @@ Files::del(string fileId, bool supportsTeamDrives,
     return true;
 }
 
-bool Files::emptyTrash(string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
+bool FilesApi::emptyTrash(string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
     }
@@ -136,7 +150,7 @@ bool Files::emptyTrash(string alt, string fields, bool prettyPrint, string quota
 }
 
 File
-Files::exp(string fileId, string mimeType,
+FilesApi::exp(string fileId, string mimeType,
                     string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -163,7 +177,7 @@ Files::exp(string fileId, string mimeType,
 }
 
 GeneratedIds
-Files::generateIds(int count, string space, string alt, string fields, bool prettyPrint, string quotaUser,
+FilesApi::generateIds(int count, string space, string alt, string fields, bool prettyPrint, string quotaUser,
                             string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -194,7 +208,7 @@ Files::generateIds(int count, string space, string alt, string fields, bool pret
 }
 
 File
-Files::get(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, string alt, string fields,
+FilesApi::get(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, string alt, string fields,
                     bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -202,7 +216,7 @@ Files::get(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, string
 
     if(alt == "media") { //download
         alt = "";
-        thread(Files::download, fileId);
+        thread(FilesApi::download, fileId);
     }
 
     map<string, string> querystring = { make_pair("acknowledgeAbuse", acknowledgeAbuse ? "true" : "false"), make_pair("supportsTeamDrives", supportsTeamDrives ? "true" : "false"),
@@ -229,7 +243,7 @@ Files::get(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, string
     return fr;
 }
 
-File Files::update(string fileId, string uploadType,  string addParents, bool keepRevisionForever, string ocrLanguage, string removeParents, bool supportsTeamDrives, bool useContentAsIndexableText, File& requestBody,
+File FilesApi::update(string fileId, string uploadType,  string addParents, bool keepRevisionForever, string ocrLanguage, string removeParents, bool supportsTeamDrives, bool useContentAsIndexableText, File& requestBody,
                                      string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
@@ -261,7 +275,7 @@ File Files::update(string fileId, string uploadType,  string addParents, bool ke
 }
 
 Channel
-Files::watch(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, Channel& requestBody,
+FilesApi::watch(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, Channel& requestBody,
                       string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
     throw -2;
     //TODO implement
@@ -297,7 +311,7 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
     return written;
 }
 
-void Files::download(string fileId) {
+void FilesApi::download(string fileId) {
     CURL *curl_handle;
     static const char *pagefilename = "page.out";
     FILE *pagefile;

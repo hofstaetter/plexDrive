@@ -5,7 +5,7 @@
 #ifndef GOOGLEDRIVEAPI_GENERATEIDSRESPONSE_H
 #define GOOGLEDRIVEAPI_GENERATEIDSRESPONSE_H
 
-#include "files/Files.h"
+#include "files/FilesApi.h"
 #include <string>
 #include <vector>
 #include <document.h>

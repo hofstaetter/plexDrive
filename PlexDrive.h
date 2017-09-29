@@ -8,11 +8,14 @@
 #define FUSE_USE_VERSION 31
 
 #include <fuse.h>
-#include "googleDrive.h"
+#include <boost/log/trivial.hpp>
+#include "GoogleDrive.h"
 
-class plexDrive {
+class PlexDrive {
 private:
-    static googleDrive gD;
+    static int VERBOSE;
+
+    static GoogleDrive gD;
 public:
     static void *init(struct fuse_conn_info *conn);
     static int getAttr(const char *path, struct stat *stbuf);

@@ -17,14 +17,14 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
-#include "Files.h"
+#include "FilesApi.h"
 #include "API.h"
 #include "oauth/GoogleOAuth.h"
 #include "channels/Channel.h"
 
 using namespace std;
 
-class Files {
+class FilesApi {
 public:
     static class File copy(std::string fileId, bool ignoreDefaultVisibility, bool keepRevisionForever, std::string ocrLanguage, bool supportsTeamDrives, File &requestBody,
                                     string alt = "", std::string fields = "", bool prettyPrint = false, std::string quotaUser = "", std::string userId = "");

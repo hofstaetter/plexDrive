@@ -7,6 +7,12 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FILE_OFFSET_BITS=64")
 
+#boost
+find_package(Boost)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 add_subdirectory(googleDrive)
 
 if(APPLE)
@@ -17,12 +23,16 @@ if(UNIX AND NOT APPLE)
     include_directories(googleDrive/googleDriveApi/include googleDrive/googleDriveApi/rapidjson/include/rapidjson googleDrive/googleDriveApi/curl/include googleDrive/sqlite googleDrive/include)
 endif()
 
-set(SOURCE_FILES main.cpp plexDrive.cpp plexDrive.h)
+set(SOURCE_FILES PlexDrive.cpp PlexDrive.h)
 add_executable(plexDrive ${SOURCE_FILES})
 
+target_link_libraries(plexDrive googleDrive googleDriveApi sqlite3)
 if(APPLE)
-    target_link_libraries(plexDrive googleDrive googleDriveApi osxfuse sqlite3)
+    target_link_libraries(plexDrive osxfuse)
 endif()
 if(UNIX AND NOT APPLE)
-    target_link_libraries(plexDrive googleDrive googleDriveApi fuse sqlite3 pthread)
+    target_link_libraries(plexDrive fuse)
+endif()
+if(Boost_FOUND)
+    target_link_libraries(googleDriveApi ${Boost_LIBRARIES})
 endif()
