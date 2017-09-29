@@ -8,6 +8,11 @@ find_package(Boost)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
+#curl
+find_package(curl)
+if(CURL_FOUND)
+    include_directories(${CURL_INCLUDE_DIRS})
+endif()
 
 include_directories(include googleDriveApi/include googleDriveApi/rapidjson/include/rapidjson)
 
