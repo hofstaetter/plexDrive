@@ -3,6 +3,7 @@
 //
 
 #include <fstream>
+#include <GoogleDriveApi.h>
 #include "oauth/GoogleOAuth.h"
 
 using namespace std;
@@ -90,7 +91,7 @@ void GoogleOAuth::refreshAccessToken(string clientSecret, string grantType, stri
 
 void GoogleOAuth::authenticate() {
     rapidjson::Document configuration(rapidjson::kObjectType);
-    ifstream file("config.json");
+    ifstream file(GoogleDriveApi::CONFIG_PATH);
     if(file.is_open()) {
         string configurationstring;
         file >> configurationstring;
@@ -137,7 +138,7 @@ void GoogleOAuth::authenticate() {
         configuration.Accept(writer);
 
         string configurationstring = buffer.GetString();
-        ofstream file("config.json");
+        ofstream file(GoogleDriveApi::CONFIG_PATH);
         file << configurationstring;
         file.close();
     }

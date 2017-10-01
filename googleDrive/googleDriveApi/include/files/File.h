@@ -23,6 +23,10 @@ using namespace std;
 
 class File {
 private:
+public:
+    virtual ~File();
+
+private:
     //string kind;
     string id;
     string name;
@@ -55,20 +59,20 @@ public:
     File();
     File(rapidjson::Document& document);
 
-    string &toString();
+    string toString();
     rapidjson::Document &toJSON();
 
     /*string &getKind();
     void setKind(string &kind);*/
 
-    string &getId();
-    void setId(string &id);
+    string getId();
+    void setId(string id);
 
-    string &getName();
-    void setName(string &name);
+    string getName();
+    void setName(string name);
 
-    string &getMimeType();
-    void setMimeType(string &mimeType);
+    string getMimeType();
+    void setMimeType(string mimeType);
 
     /*string &getDescription();
     void setDescription(string &description);
@@ -88,8 +92,8 @@ public:
     time_t getTrashedTime();
     void setTrashedTime(time_t trashedTime);*/
 
-    vector<string> &getParents();
-    void setParents(vector<string> &parents);
+    vector<string> getParents();
+    void setParents(vector<string> parents);
 
     /*map<string, string> &getProperties();
     void setProperties(map<string, string> &properties);
@@ -103,8 +107,8 @@ public:
     long getVersion();
     void setVersion(long version);*/
 
-    string &getWebContentLink();
-    void setWebContentLink(string &webContentLink);
+    string getWebContentLink();
+    void setWebContentLink(string webContentLink);
 
     /*string &getWebViewLink();
     void setWebViewLink(string &webViewLink);
@@ -122,7 +126,7 @@ public:
     void setViewedByMeTime(long viewedByMeTime);
 
     long getModifiedTime();
-    void setModifiedTime(long &modifiedTime);
+    void setModifiedTime(long modifiedTime);
 
     long getSize();
     void setSize(long size);

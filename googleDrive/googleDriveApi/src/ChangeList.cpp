@@ -8,6 +8,7 @@ ChangeList::ChangeList() {
 }
 
 ChangeList::ChangeList(rapidjson::Document &document) {
+    cout << "[DEBUG] " << "Creating ChangeList..." << endl;
     if(document.HasMember("kind"))
         this->kind = document["kind"].GetString();
     if(document.HasMember("nextPageToken"))
@@ -21,36 +22,37 @@ ChangeList::ChangeList(rapidjson::Document &document) {
             this->changes.push_back(Change(d));
         }
     }
+    cout << "[DEBUG] Created ChangeList with " << this->changes.size() << " items." << endl;
 }
 
-string &ChangeList::getKind() {
+string ChangeList::getKind() {
     return kind;
 }
 
-void ChangeList::setKind(string &kind) {
+void ChangeList::setKind(string kind) {
     ChangeList::kind = kind;
 }
 
-string &ChangeList::getNextPageToken() {
+string ChangeList::getNextPageToken() {
     return nextPageToken;
 }
 
-void ChangeList::setNextPageToken(string &nextPageToken) {
+void ChangeList::setNextPageToken(string nextPageToken) {
     ChangeList::nextPageToken = nextPageToken;
 }
 
-string &ChangeList::getNewStartPageToken() {
+string ChangeList::getNewStartPageToken() {
     return newStartPageToken;
 }
 
-void ChangeList::setNewStartPageToken(string &newStartPageToken) {
+void ChangeList::setNewStartPageToken(string newStartPageToken) {
     ChangeList::newStartPageToken = newStartPageToken;
 }
 
-vector<Change> &ChangeList::getChanges() {
+vector<Change> ChangeList::getChanges() {
     return changes;
 }
 
-void ChangeList::setChanges(vector<Change> &changes) {
+void ChangeList::setChanges(vector<Change> changes) {
     ChangeList::changes = changes;
 }

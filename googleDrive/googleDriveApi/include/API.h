@@ -17,6 +17,11 @@ using namespace std;
 class API {
 public:
     static long request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string &responseHeaders, string &responseBody);
+    static long request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string& responseHeaders, FILE *file);
+
+private:
+    static void prepare(CURL *curl, string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body);
+    static long execute(CURL *curl);
 };
 
 

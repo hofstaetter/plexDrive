@@ -20,18 +20,18 @@ private:
     time_t datetime;
     bool removed;
     string fileId;
-    class File file;
+    File file;
     string teamDriveId;
-    class TeamDrive teamDrive;
+    TeamDrive teamDrive;
 public:
     Change();
     Change(rapidjson::Document &document);
 
-    string &getKind();
-    void setKind(string &kind);
+    string getKind();
+    void setKind(string kind);
 
-    string &getType();
-    void setType(string &type);
+    string getType();
+    void setType(string type);
 
     time_t getDatetime();
     void setDatetime(time_t datetime);
@@ -39,17 +39,17 @@ public:
     bool isRemoved();
     void setRemoved(bool removed);
 
-    string &getFileId();
-    void setFileId(string &fileId);
+    string getFileId();
+    void setFileId(string fileId);
 
-    class File &getFile();
-    void setFile(class File file);
+    File getFile();
+    void setFile(File file);
 
-    string &getTeamDriveId();
-    void setTeamDriveId(string &teamDriveId);
+    string getTeamDriveId();
+    void setTeamDriveId(string teamDriveId);
 
-    class TeamDrive &getTeamDrive();
-    void setTeamDrive(class TeamDrive teamDrive);
+    TeamDrive getTeamDrive();
+    void setTeamDrive(TeamDrive teamDrive);
 };
 
 

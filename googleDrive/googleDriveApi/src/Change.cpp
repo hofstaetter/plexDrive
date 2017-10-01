@@ -11,6 +11,7 @@ Change::Change() {
 }
 
 Change::Change(rapidjson::Document &document) {
+    cout << "[DEBUG] Creating Change..." << endl;
     /*this->document = new rapidjson::Document;
     this->document->CopyFrom(document, (this->document)->GetAllocator());*/
     if(document.HasMember("kind"))
@@ -26,32 +27,31 @@ Change::Change(rapidjson::Document &document) {
     if(document.HasMember("file")) {
         rapidjson::Document d(rapidjson::kObjectType);
         d.CopyFrom(document["file"], d.GetAllocator());
-        File f(d);
-        this->file = f;
+        this->file = File(d);
     }
-    if(document.HasMember("teamDriveId"))
+    /*if(document.HasMember("teamDriveId"))
         this->teamDriveId = document["teamDriveId"].GetString();
     if(document.HasMember("teamDrive")) {
         rapidjson::Document document(rapidjson::kObjectType);
         document.CopyFrom(document["teamDrive"], document.GetAllocator());
         this->teamDrive = TeamDrive(document);
-    }
-
+    }*/
+    cout << "[DEBUG] Created Change for File " << this->file.getId() << endl;
 }
 
-string &Change::getKind() {
+string Change::getKind() {
     return kind;
 }
 
-void Change::setKind(string &kind) {
+void Change::setKind(string kind) {
     this->kind = kind;
 }
 
-string &Change::getType() {
+string Change::getType() {
     return type;
 }
 
-void Change::setType(string &type) {
+void Change::setType(string type) {
     this->type = type;
 }
 
@@ -71,31 +71,31 @@ void Change::setRemoved(bool removed) {
     this->removed = removed;
 }
 
-string &Change::getFileId() {
+string Change::getFileId() {
     return fileId;
 }
 
-void Change::setFileId(string &fileId) {
+void Change::setFileId(string fileId) {
     this->fileId = fileId;
 }
 
-class File &Change::getFile() {
+File Change::getFile() {
     return file;
 }
 
-void Change::setFile(class File file) {
+void Change::setFile(File file) {
     this->file = file;
 }
 
-string &Change::getTeamDriveId() {
+string Change::getTeamDriveId() {
     return teamDriveId;
 }
 
-void Change::setTeamDriveId(string &teamDriveId) {
+void Change::setTeamDriveId(string teamDriveId) {
     this->teamDriveId = teamDriveId;
 }
 
-class TeamDrive &Change::getTeamDrive() {
+class TeamDrive Change::getTeamDrive() {
     return teamDrive;
 }
 

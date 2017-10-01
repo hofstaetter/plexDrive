@@ -85,7 +85,7 @@ int my_trace(CURL *handle, curl_infotype type,
 }
 
 string bodyBuffer = "";
-string headerBuffer;
+string headerBuffer = "";
 
 size_t
 writeBodyBuffer(char *ptr, size_t size, size_t nmemb, void *stream)
@@ -103,23 +103,10 @@ writeHeaderBuffer(char *ptr, size_t size, size_t nmemb, void *stream)
 
 long
 API::request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string& responseHeaders, string& responseBody) {
-    CURL *req = curl_easy_init();
-
-    curl_global_init(CURL_GLOBAL_ALL);
-
-    //curl_easy_setopt(req, CURLOPT_DEBUGFUNCTION, my_trace);
-
-    //curl_version_info_data *d = curl_version_info(CURLVERSION_NOW);
-
-    //debug
-    //curl_easy_setopt(req, CURLOPT_VERBOSE, 1L);
-
-    //error
-    char errbuf[CURL_ERROR_SIZE];
-    curl_easy_setopt(req, CURLOPT_ERRORBUFFER, errbuf);
+    CURL *curl = curl_easy_init();
 
     //timeout
-    curl_easy_setopt(req, CURLOPT_TIMEOUT, 5);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
 
 
     //build & set url
@@ -130,7 +117,7 @@ API::request(string host, string path, string type, map<string, string> queryStr
     for(auto &p : queryString) {
         url.append((url.find("?") == string::npos) ? "?" : "&").append(p.first.c_str()).append("=").append(p.second.c_str());
     }
-    curl_easy_setopt(req, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
 
     //set postFields
@@ -139,8 +126,8 @@ API::request(string host, string path, string type, map<string, string> queryStr
         for(auto &p : postFields) {
             postfields.append((postfields.empty()) ? "" : "&").append(p.first).append("=").append(p.second.c_str());
         }
-        curl_easy_setopt(req, CURLOPT_POSTFIELDS, postfields.c_str());
-        curl_easy_setopt(req, CURLOPT_POSTFIELDSIZE, postfields.length());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfields.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfields.length());
     }
 
 
@@ -153,60 +140,157 @@ API::request(string host, string path, string type, map<string, string> queryStr
     for(auto &p : header) {
         headers = curl_slist_append(headers, (p.first + ": " + p.second).c_str());
     }
-    curl_easy_setopt(req, CURLOPT_HTTPHEADER, headers);
-
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
     //write response to buffer
-    curl_easy_setopt(req, CURLOPT_WRITEFUNCTION, writeBodyBuffer);
-    curl_easy_setopt(req, CURLOPT_HEADERFUNCTION, writeHeaderBuffer);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeBodyBuffer);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaderBuffer);
 
-    //verbose
-    cout << "[REQUEST] "  << type << " " << url << endl;
+    cout << "[VERBOSE] " << type << " " << url << endl;
 
-    //perform
-    CURLcode result = curl_easy_perform(req);
+    CURLcode result = curl_easy_perform(curl);
+
+    cout << "[VERBOSE] " << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << " " << bodyBuffer << endl;
 
     long statuscode;
-    if(result == CURLE_OK || result == CURLE_RECV_ERROR) {
-        //get http status code
-        curl_easy_getinfo(req, CURLINFO_RESPONSE_CODE, &statuscode);
-
-        responseBody = bodyBuffer;
-
-        //gzip
-        /*namespace bio = boost::iostreams;
-
-        std::stringstream compressed(bodyBuffer);
-        std::stringstream decompressed;
-
-        bio::filtering_streambuf<bio::input> out;
-        out.push(bio::gzip_decompressor());
-        out.push(compressed);
-        boost::iostreams::copy(out, decompressed);
-
-        responseBody = decompressed.str();*/
+    if(result == CURLE_OK || result == CURLE_RECV_ERROR) { //TODO MACOSX FIX
+        //cleanup
+        curl_easy_cleanup(curl);
 
         responseHeaders = headerBuffer;
-        cout << "[RESPONSE] "  << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl << responseBody << endl;
-    } else {
-        size_t len = strlen(errbuf);
-        fprintf(stderr, "\nlibcurl: (%d) ", result);
-        if(len)
-            fprintf(stderr, "%s%s", errbuf,
-                    ((errbuf[len - 1] != '\n') ? "\n" : ""));
-        else
-            fprintf(stderr, "%s\n", curl_easy_strerror(result));
+        responseBody = bodyBuffer;
+
+        bodyBuffer.clear();
+        headerBuffer.clear();
+
+        //get http status code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statuscode);
+        return statuscode;
     }
-
-    curl_slist_free_all(headers);
-
-    curl_easy_cleanup(req);
-
-    bodyBuffer.clear();
-    headerBuffer.clear();
 
     //retry
     //if(statuscode == 500) return request(host, path, type, queryString, header, postFields, body, responseHeaders, responseBody);
 
-    return statuscode;
+    throw -1;
+}
+
+long
+API::request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string& responseHeaders, FILE *file) {
+    CURL *curl = curl_easy_init();
+
+    //timeout
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
+
+    //build & set url
+    string url;
+
+    url.append(host);
+    url.append(path);
+    for(auto &p : queryString) {
+        url.append((url.find("?") == string::npos) ? "?" : "&").append(p.first.c_str()).append("=").append(p.second.c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+
+    //set postFields
+    string postfields;
+    if(type.compare("POST") == 0) {
+        for(auto &p : postFields) {
+            postfields.append((postfields.empty()) ? "" : "&").append(p.first).append("=").append(p.second.c_str());
+        }
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfields.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfields.length());
+    }
+
+
+    //set headers
+    struct curl_slist *headers=NULL;
+    headers = curl_slist_append(headers, ("Host: " + host.substr(host.find("://", 0) + 3, host.length() - host.find("://", 0))).c_str());
+    headers = curl_slist_append(headers, ("Content-length: " + to_string(body.length() + postfields.length())).c_str());
+    headers = curl_slist_append(headers, "Connection: close");
+    headers = curl_slist_append(headers, "User-Agent: plexDrive");
+    for(auto &p : header) {
+        headers = curl_slist_append(headers, (p.first + ": " + p.second).c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    //write response to buffer
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaderBuffer);
+
+    //perform
+    CURLcode result = curl_easy_perform(curl);
+
+    long statuscode;
+    if(result == CURLE_OK || result == CURLE_RECV_ERROR) { //TODO MACOSX FIX
+        //cleanup
+        curl_easy_cleanup(curl);
+
+        responseHeaders = headerBuffer;
+
+        headerBuffer.clear();
+
+        //get http status code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statuscode);
+        return statuscode;
+    }
+
+    throw -1;
+}
+
+void API::prepare(CURL *curl, string host, string path, string type, map<string, string> queryString,
+                  map<string, string> header, map<string, string> postFields, string body) {
+    //timeout
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
+
+
+    //build & set url
+    string url;
+
+    url.append(host);
+    url.append(path);
+    for(auto &p : queryString) {
+        url.append((url.find("?") == string::npos) ? "?" : "&").append(p.first.c_str()).append("=").append(p.second.c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+
+    //set postFields
+    string postfields;
+    if(type.compare("POST") == 0) {
+        for(auto &p : postFields) {
+            postfields.append((postfields.empty()) ? "" : "&").append(p.first).append("=").append(p.second.c_str());
+        }
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfields.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfields.length());
+    }
+
+
+    //set headers
+    struct curl_slist *headers=NULL;
+    headers = curl_slist_append(headers, ("Host: " + host.substr(host.find("://", 0) + 3, host.length() - host.find("://", 0))).c_str());
+    headers = curl_slist_append(headers, ("Content-length: " + to_string(body.length() + postfields.length())).c_str());
+    headers = curl_slist_append(headers, "Connection: close");
+    headers = curl_slist_append(headers, "User-Agent: plexDrive");
+    for(auto &p : header) {
+        headers = curl_slist_append(headers, (p.first + ": " + p.second).c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+}
+
+long API::execute(CURL *curl) {
+    //perform
+    CURLcode result = curl_easy_perform(curl);
+
+    long statuscode;
+    if(result == CURLE_OK || result == CURLE_RECV_ERROR) { //TODO MACOSX FIX
+        //cleanup
+        curl_easy_cleanup(curl);
+
+        //get http status code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statuscode);
+        return statuscode;
+    }
+    throw -1;
 }

@@ -46,8 +46,6 @@ public:
                                 string alt = "", string fields = "", bool prettyPrint = false, string quotaUser = "", string userId = "");
     static class Channel watch(string fileId, bool acknowledgeAbuse, bool supportsTeamDrives, Channel& requestBody,
                                      string alt = "", string fields = "", bool prettyPrint = false, string quotaUser = "", string userId = "");
-private:
-    static void download(string fileId);
 };
 
 

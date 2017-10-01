@@ -14,14 +14,15 @@ using namespace std;
 
 class GoogleDriveCache {
 public:
-    static void init(string path);
-    static void insert(File f);
+    static string DB_PATH;
+
+    static void init();
+    static void insert(File &f);
     static void remove(string fileId);
-    static File &get(string fileId);
+    static File get(string fileId);
 
     static vector<string> getChildren(string fileId);
 private:
-    static string Path;
     static void prepareDb();
 };
 

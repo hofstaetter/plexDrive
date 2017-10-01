@@ -12,8 +12,10 @@
 #include "../GoogleDriveCache.h"
 
 #include <files/FilesApi.h>
+#include <GoogleDriveApi.h>
 
-int GoogleDrive::VERBOSE = 0;
+int GoogleDrive::VERBOSE;
+string GoogleDrive::PATH;
 
 File GoogleDrive::root;
 string GoogleDrive::pageToken;
@@ -36,73 +38,49 @@ std::vector<std::string> splitPath(const std::string &s, char delim) {
 
 File GoogleDrive::getFile(string path) {
     File current = GoogleDrive::root;
-    vector<string> folders = splitPath(path, '/');
-    folders = vector<string>(folders.begin() + 1, folders.end());
+    if(path == "/") return current; //if root
 
-    for(string i : folders) {
-        for(string j : current.getParents()) {
-            if((current = GoogleDriveCache::get(j)).getName() == i) {
-                break;
-            }
+    start:
+    string folder;
+    path = path.substr(1, path.length());
+    folder = path.substr(0, path.find("/"));
+    if(path.find("/") != string::npos) {
+        path = path.substr(path.find("/"), path.length());
+    }
+
+    for(string s : GoogleDriveCache::getChildren(current.getId())) {
+        if(GoogleDriveCache::get(s).getName() == folder) {
+            if(path.find("/") == string::npos)
+                return GoogleDriveCache::get(s);
+            current = GoogleDriveCache::get(s);
+            goto start;
         }
     }
 
-    return current;
-    /*if(path.empty()) throw -1;
-    if(fileCache.size() < 1)
-        fileCache.insert(make_pair("/", Files::get("root", false, false, false, "*")));
-    if(path == "/") return fileCache.at("/");
-
-    File f = googleDrive::fileCache.at("/");
-
-    vector<string> folders = splitPath(path, '/');
-    folders = vector<string>(folders.begin() + 1, folders.end());
-    //get nearest known folder/File
-    for(int i = folders.size(); i > 0; i--) {
-        try {
-            string subpath = "";
-            for(int j = 0; j < i; j++) {
-                subpath.append("/").append(folders[j]);
-            }
-            f = fileCache.at(subpath);
-            folders = vector<string>(folders.begin() + i, folders.end());
-            break;
-        } catch (out_of_range &e) {
-            continue;
-        }
-    }
-
-    //get needed folders
-    FileList fl;
-    for(int i = 0; i < folders.size(); i++) {
-        fl = Files::list("", "", "", "", 1, "", (i != folders.size() - 1) ? string("'").append(f.getId()).append("' in parents and name='").append(folders[i]).append("'+and+mimeType+=+'application/vnd.google-apps.folder'") :
-                                                string("'").append(f.getId()).append("' in parents and name='").append(folders[folders.size() - 1]).append("'"));
-        vector<File> fv = fl.getFiles();
-        if(fv.size() > 0)
-            f = fv[0];
-        else
-            throw -1;
-    }
-
-    googleDrive::fileCache[path] = f;
-
-    return f;*/
-    return File();
+    throw -1;
 }
 
 vector<File> GoogleDrive::getDirectory(string path) {
     vector<File> result;
 
+    vector<string> temp = GoogleDriveCache::getChildren(getFile(path).getId());
+
     for(string s : GoogleDriveCache::getChildren(getFile(path).getId())) {
-        result.push_back(GoogleDriveCache::get(s));
+        File f = GoogleDriveCache::get(s);
+        result.push_back(f);
     }
 
     return result;
 }
 
-void GoogleDrive::init() {
+void GoogleDrive::init(int verbose, string path) {
     //cout << "GoogleDrive v0.0.1 | Frezy Software Studios";
-    GoogleDriveCache::init("/Users/matthias/cache.sqlite");
+    GoogleDrive::VERBOSE = verbose;
+    GoogleDrive::PATH = path;
+
+    GoogleDriveCache::init();
+
+    GoogleDriveApi::init();
 
     GoogleDrive::root = FilesApi::get("root");
 
@@ -141,15 +119,16 @@ void GoogleDrive::getChanges() {
         //chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
         cout << "[VERBOSE] Getting changes with page token " << cl.getNextPageToken() << "..." << endl;
 
-        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/webContentLink,changes/file/viewedByMeTime,changes/file/modifiedTime,changes/file/size,changes/file/parents", false);
+        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/size,changes/file/parents", false); /*changes/file/viewedByMeTime,changes/file/modifiedTime,*/
 
         //chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
 
-        for(Change c : cl.getChanges()) {
+        for(Change &c : cl.getChanges()) {
             if(c.isRemoved()) {
                 GoogleDriveCache::remove(c.getFile().getId());
             } else {
-                GoogleDriveCache::insert(c.getFile());
+                File f = c.getFile();
+                GoogleDriveCache::insert(f);
             }
         }
 
@@ -177,4 +156,12 @@ void GoogleDrive::getChanges() {
         cout << "Request: " << d1.count() << " ms | Fetch: " << d2.count() << " ms | Done: " << (atol(cl.getNextPageToken().c_str()) / end) << "%" << endl;*/
     }
     GoogleDrive::pageToken = cl.getNewStartPageToken();
+}
+
+void GoogleDrive::downloadFile(string path) {
+    File f = GoogleDrive::getFile(path);
+
+    thread t(GoogleDriveApi::download, f.getId());
+
+    t.join();
 }

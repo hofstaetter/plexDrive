@@ -12,6 +12,7 @@ File::File() {
 }
 
 File::File(rapidjson::Document& document) {
+    cout << "[DEBUG] Creating File..." << endl;
     /*this->document = new rapidjson::Document;
     (*this->document).CopyFrom(document, (this->document)->GetAllocator());*/
     /*if(document.HasMember("kind"))
@@ -81,6 +82,7 @@ File::File(rapidjson::Document& document) {
 
     if(document.HasMember("size"))
         this->size = stol(document["size"].GetString());
+    cout << "[DEBUG] Created File with " << this->id << endl;
 }
 
 /*string &File::getKind() {
@@ -91,27 +93,27 @@ void File::setKind(string &kind) {
     File::kind = kind;
 }*/
 
-string &File::getId() {
+string File::getId() {
     return id;
 }
 
-void File::setId(string &id) {
+void File::setId(string id) {
     File::id = id;
 }
 
-string &File::getName() {
+string File::getName() {
     return name;
 }
 
-void File::setName(string &name) {
+void File::setName(string name) {
     File::name = name;
 }
 
-string &File::getMimeType() {
+string File::getMimeType() {
     return mimeType;
 }
 
-void File::setMimeType(string &mimeType) {
+void File::setMimeType(string mimeType) {
     File::mimeType = mimeType;
 }
 
@@ -155,11 +157,11 @@ void File::setTrashingUser(User &trashingUser) {
     File::trashingUser = trashingUser;
 }*/
 
-vector<string> &File::getParents() {
+vector<string> File::getParents() {
     return parents;
 }
 
-void File::setParents(vector<string> &parents) {
+void File::setParents(vector<string> parents) {
     File::parents = parents;
 }
 
@@ -195,11 +197,11 @@ void File::setVersion(long version) {
     File::version = version;
 }*/
 
-string &File::getWebContentLink() {
+string File::getWebContentLink() {
     return webContentLink;
 }
 
-void File::setWebContentLink(string &webContentLink) {
+void File::setWebContentLink(string webContentLink) {
     File::webContentLink = webContentLink;
 }
 
@@ -255,11 +257,11 @@ long File::getModifiedTime() {
     return modifiedTime;
 }
 
-void File::setModifiedTime(long &modifiedTime) {
+void File::setModifiedTime(long modifiedTime) {
     File::modifiedTime = modifiedTime;
 }
 
-string &File::toString() {
+string File::toString() {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     this->toJSON().Accept(writer);
@@ -316,6 +318,10 @@ rapidjson::Document &File::toJSON() {
     //TODO
 
     return d;
+}
+
+File::~File() {
+    //cout << "[DEBUG] Destroying File with id " << this->id << "..." << endl;
 }
 
 /*string File::getKind() {

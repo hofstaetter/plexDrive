@@ -42,9 +42,9 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
     try{
         File f = GoogleDrive::getFile(path);
 
-        stbuf->st_mode = (f.getMimeType().compare("application/vnd.google-apps.folder") == 0) ? S_IFDIR | 0755 : S_IFREG | 0777;
-        stbuf->st_nlink = 2;
-        stbuf->st_size = f.getSize();
+        stbuf->st_mode = (f.getMimeType() == "application/vnd.google-apps.folder") ? S_IFDIR | 0755 : S_IFREG | 0777;
+        stbuf->st_nlink = (f.getMimeType() == "application/vnd.google-apps.folder") ? 2 : 1;
+        stbuf->st_size = (f.getMimeType() == "application/vnd.google-apps.folder") ? 0 : f.getSize();
         //TODO modifiedTimes
         cout << "[VERBOSE] getAddr returns 0" << endl;
         return 0;
@@ -80,11 +80,23 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 }
 
 int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
+    try {
+        GoogleDrive::getFile(path);
+        GoogleDrive::downloadFile(path);
+    } catch (int i) {
+        return -ENOENT;
+    }
+    //TODO access rights
+
     return 0;
 }
 
 int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     cout << "[VERBOSE] read " << path << endl;
+
+    File file = GoogleDrive::getFile(path);
+
+
 
     if (strcmp(path, "/test") == 0) {
         size_t len = strlen("test");

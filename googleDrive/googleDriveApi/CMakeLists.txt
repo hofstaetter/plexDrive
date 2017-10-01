@@ -19,8 +19,9 @@ endif()
 #include dependencies
 include_directories(include rapidjson/include/rapidjson)
 
-file(GLOB SOURCE_FILES include/files/File.h
+file(GLOB SOURCE_FILES
         include/*.h
+        include/*/*.h
         src/*.cpp)
 add_library(googleDriveApi ${SOURCE_FILES} )
 

@@ -37,17 +37,17 @@ public:
     ChangeList();
     ChangeList(rapidjson::Document &document);
 
-    string &getKind();
-    void setKind(string &kind);
+    string getKind();
+    void setKind(string kind);
 
-    string &getNextPageToken();
-    void setNextPageToken(string &nextPageToken);
+    string getNextPageToken();
+    void setNextPageToken(string nextPageToken);
 
-    string &getNewStartPageToken();
-    void setNewStartPageToken(string &newStartPageToken);
+    string getNewStartPageToken();
+    void setNewStartPageToken(string newStartPageToken);
 
-    vector<Change> &getChanges();
-    void setChanges(vector<Change> &changes);
+    vector<Change> getChanges();
+    void setChanges(vector<Change> changes);
 };
 
 
