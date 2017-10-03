@@ -91,7 +91,7 @@ void GoogleOAuth::refreshAccessToken(string clientSecret, string grantType, stri
 
 void GoogleOAuth::authenticate() {
     rapidjson::Document configuration(rapidjson::kObjectType);
-    ifstream file(GoogleDriveApi::CONFIG_PATH);
+    ifstream file(::CONFIG_PATH);
     if(file.is_open()) {
         string configurationstring;
         file >> configurationstring;
@@ -138,7 +138,7 @@ void GoogleOAuth::authenticate() {
         configuration.Accept(writer);
 
         string configurationstring = buffer.GetString();
-        ofstream file(GoogleDriveApi::CONFIG_PATH);
+        ofstream file(::CONFIG_PATH);
         file << configurationstring;
         file.close();
     }

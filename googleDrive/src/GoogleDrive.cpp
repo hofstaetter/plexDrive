@@ -13,9 +13,13 @@
 
 #include <files/FilesApi.h>
 #include <GoogleDriveApi.h>
+#include <future>
+#include <sys/stat.h>
 
 int GoogleDrive::VERBOSE;
 string GoogleDrive::PATH;
+
+long CHUNK_SIZE = 10485760;
 
 File GoogleDrive::root;
 string GoogleDrive::pageToken;
@@ -119,7 +123,7 @@ void GoogleDrive::getChanges() {
         //chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
         cout << "[VERBOSE] Getting changes with page token " << cl.getNextPageToken() << "..." << endl;
 
-        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "nextPageToken,newStartPageToken,changes/removed,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/size,changes/file/parents", false); /*changes/file/viewedByMeTime,changes/file/modifiedTime,*/
+        cl = ChangesApi::list(cl.getNextPageToken(), false, true, false, 1000, false, "", false, "", "", "kind,nextPageToken,newStartPageToken,changes/kind,changes/removed,changes/file/kind,changes/file/id,changes/file/name,changes/file/mimeType,changes/file/size,changes/file/parents", false); /*changes/file/viewedByMeTime,changes/file/modifiedTime,*/
 
         //chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
 
@@ -158,10 +162,77 @@ void GoogleDrive::getChanges() {
     GoogleDrive::pageToken = cl.getNewStartPageToken();
 }
 
+vector<string> GoogleDrive::currentDownloads;
+
 void GoogleDrive::downloadFile(string path) {
-    File f = GoogleDrive::getFile(path);
+    vector<future<string>> futures;
+    vector<thread> threads;
+    vector<packaged_task<string(string,long,long)>> tasks;
 
-    thread t(GoogleDriveApi::download, f.getId());
+    File file = GoogleDrive::getFile(path);
 
-    t.join();
+    //file exists already?
+    struct stat statbuffer;
+    int statResult = stat(file.getId().c_str(), &statbuffer);
+    if(statResult == 0 && statbuffer.st_size == file.getSize()) {
+        return;
+    }
+
+    long chunks = file.getSize() / CHUNK_SIZE;
+
+    //currently downloading?
+    for(int i = 0; i < currentDownloads.size(); i++) {
+        if(currentDownloads[i] == file.getId()) return;
+    }
+
+    //add to currently downloading
+    currentDownloads.push_back(file.getId());
+
+    //create a task for each chunk
+    for(int i = 0; i <= chunks; i++) {
+        tasks.push_back(packaged_task<string(string,long,long)>(GoogleDriveApi::download));
+    }
+
+    //download all chunks, 4 by 4
+    for(int i = 0; i < tasks.size();) {
+        int j;
+        for(j = 0; i < tasks.size() && threads.size() != 4; j++) {
+            futures.push_back(tasks[i].get_future());
+            threads.push_back(thread(move(tasks[i]), file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
+            i++;
+        }
+        for(int k = 0; k < j; k++) {
+            threads[k].join();
+
+            ofstream filestream;
+            filestream.open(file.getId().c_str(), ios::app || ios::binary);
+            filestream << futures[k].get();
+            filestream.close();
+        }
+        threads.clear();
+        futures.clear();
+    }
+
+    //remove from currently downloading
+    for(int i = 0; i < currentDownloads.size(); i++) {
+        if(currentDownloads[i] == file.getId()) currentDownloads.erase(currentDownloads.begin() + i);
+    }
+
+    /*for(int i = 0; (i < 4 && i < chunks); i++) {
+        threads.push_back(async(launch::async, GoogleDriveApi::download, file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
+    }
+
+    for(int i = 4; i <= chunks; i++) {
+        bool threadready = false;
+        long count = 0;
+        while(!threadready) {
+            if(threads[count % 4].wait_for(chrono::milliseconds(1)) == future_status::ready) {
+                threads[count % 4].get;
+                threads.erase(threads.begin() + (count % 4));
+                threadready = true;
+            }
+            count++;
+        }
+        threads.push_back(async(launch::async, GoogleDriveApi::download, file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
+    }*/
 }

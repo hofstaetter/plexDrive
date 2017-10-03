@@ -27,7 +27,7 @@ public:
     virtual ~File();
 
 private:
-    //string kind;
+    string kind;
     string id;
     string name;
     string mimeType;

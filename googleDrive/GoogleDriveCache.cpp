@@ -7,6 +7,10 @@
 
 string GoogleDriveCache::DB_PATH;
 
+void errorLogCallback(void *pArg, int iErrCode, const char *zMsg){
+    fprintf(stderr, "(%d) %s\n", iErrCode, zMsg);
+}
+
 void GoogleDriveCache::init() {
     GoogleDriveCache::DB_PATH = GoogleDrive::PATH + "/googleDrive.sqlite";
 
@@ -17,21 +21,27 @@ void GoogleDriveCache::prepareDb() {
     sqlite3 *database;
     int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
     if(resultCode != SQLITE_OK) {
-        cout << "GoogleDrive::initCache sqlite3_open()";
+        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
         sqlite3_close(database);
         throw -1;
     }
 
     sqlite3_stmt *stmt;
-    resultCode = sqlite3_prepare_v2(database, "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, webContentLink TEXT, viewedByMeTime INTEGER NOT NULL, modifiedTime INTEGET NOT NULL, size INTEGER NOT NULL);", -1, &stmt, NULL);
+    resultCode = sqlite3_prepare_v2(database, "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, viewedByMeTime INTEGER NOT NULL, modifiedTime INTEGER NOT NULL, size INTEGER NOT NULL);", -1, &stmt, NULL);
     if(resultCode != SQLITE_OK) {
-        cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, webContentLink TEXT, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
+        cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
         sqlite3_close(database);
         throw -1;
     }
     resultCode = sqlite3_step(stmt);
     if(resultCode != SQLITE_DONE) {
         cout << "GoogleDrive::initCache sqlite3_step failed";
+        sqlite3_close(database);
+        throw -1;
+    }
+    resultCode = sqlite3_reset(stmt);
+    if(resultCode != SQLITE_OK) {
+        cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
         sqlite3_close(database);
         throw -1;
     }
@@ -48,6 +58,12 @@ void GoogleDriveCache::prepareDb() {
         sqlite3_close(database);
         throw -1;
     }
+    resultCode = sqlite3_reset(stmt);
+    if(resultCode != SQLITE_OK) {
+        cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
+        sqlite3_close(database);
+        throw -1;
+    }
 
     resultCode = sqlite3_prepare_v2(database, "CREATE INDEX IF NOT EXISTS fileIdIndex ON File(id);", -1, &stmt, NULL);
     if(resultCode != SQLITE_OK) {
@@ -61,6 +77,12 @@ void GoogleDriveCache::prepareDb() {
         sqlite3_close(database);
         throw -1;
     }
+    resultCode = sqlite3_reset(stmt);
+    if(resultCode != SQLITE_OK) {
+        cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
+        sqlite3_close(database);
+        throw -1;
+    }
 
     resultCode = sqlite3_prepare_v2(database, "CREATE INDEX IF NOT EXISTS parentChildIndex ON parent(child);", -1, &stmt, NULL);
     if(resultCode != SQLITE_OK) {
@@ -71,6 +93,12 @@ void GoogleDriveCache::prepareDb() {
     resultCode = sqlite3_step(stmt);
     if(resultCode != SQLITE_DONE) {
         cout << "GoogleDrive::initCache sqlite3_step failed";
+        sqlite3_close(database);
+        throw -1;
+    }
+    resultCode = sqlite3_reset(stmt);
+    if(resultCode != SQLITE_OK) {
+        cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
         sqlite3_close(database);
         throw -1;
     }
@@ -88,75 +116,85 @@ void GoogleDriveCache::prepareDb() {
         throw -1;
     }
 
-    sqlite3_finalize(stmt);
+    resultCode = sqlite3_finalize(stmt);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
+
+    resultCode = sqlite3_close_v2(database);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
 }
 
 void GoogleDriveCache::insert(File &f) {
     sqlite3 *database;
     int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
     if(resultCode != SQLITE_OK) {
-        cout << "Can't open database";
+        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
         sqlite3_close(database);
         throw -1;
     }
+
+    sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, NULL);
     
     sqlite3_stmt *insertStatement;
 
-    resultCode = sqlite3_prepare_v2(database, "INSERT OR REPLACE INTO file(id, name, mimeType, webContentLink, viewedByMeTime, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7);", -1, &insertStatement, NULL);
+    resultCode = sqlite3_prepare_v2(database, "INSERT OR REPLACE INTO file(id, name, mimeType, viewedByMeTime, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);", -1, &insertStatement, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_prepare_v2(" << "INSERT OR REPLACE INTO file(id, name, mimeType, webContentLink, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);" << ")";
         sqlite3_close(database);
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(insertStatement, 1, f.getId().c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(insertStatement, 1, f.getId().c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 1 << ", " << f.getId() << ")";
         sqlite3_close(database);
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(insertStatement, 2, f.getName().c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(insertStatement, 2, f.getName().c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 2 << ", " << f.getName() << ")";
         sqlite3_close(database);
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(insertStatement, 3, f.getMimeType().c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(insertStatement, 3, f.getMimeType().c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 3 << ", " << f.getMimeType() << ")";
         sqlite3_close(database);
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(insertStatement, 4, "", -1, SQLITE_STATIC);
+    /*resultCode = sqlite3_bind_text(insertStatement, 4, "", -1, SQLITE_STATIC);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 4 << ", " << f.getWebContentLink() << ")";
         sqlite3_close(database);
         throw -1;
-    }
+    }*/
 
-    long long int temp = static_cast<long long int>(f.getViewedByMeTime());
-    resultCode = sqlite3_bind_int64(insertStatement, 5, temp);
+    resultCode = sqlite3_bind_int64(insertStatement, 4, f.getViewedByMeTime());
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 5 << ", " << f.getModifiedTime() << ")";
         sqlite3_close(database);
         throw -1;
     }
 
-    temp = static_cast<long long int>(f.getModifiedTime());
-    resultCode = sqlite3_bind_int64(insertStatement, 6, temp);
+    resultCode = sqlite3_bind_int64(insertStatement, 5, f.getModifiedTime());
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 5 << ", " << f.getModifiedTime() << ")";
         sqlite3_close(database);
         throw -1;
     }
-    ostringstream ss;
-    ss << f.getSize();
-    resultCode = sqlite3_bind_text(insertStatement, 7, ss.str().c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_int64(insertStatement, 6, f.getSize());
     if(resultCode != SQLITE_OK) {
-        cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 6 << ", " << ss.str() << ")";
+        cout << "GoogleDrive::insertIntoCache sqlite3_bind_te ";
         sqlite3_close(database);
         throw -1;
     }
@@ -218,13 +256,20 @@ void GoogleDriveCache::insert(File &f) {
         sqlite3_close(database);
         throw -1;
     }
+
+    resultCode = sqlite3_close(database);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
 }
 
 void GoogleDriveCache::remove(string fileId) {
     sqlite3 *database;
     int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
     if(resultCode != SQLITE_OK) {
-        cout << "Can't open database";
+        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
         sqlite3_close(database);
         throw -1;
     }
@@ -280,14 +325,26 @@ void GoogleDriveCache::remove(string fileId) {
         throw -1;
     }
 
-    sqlite3_finalize(deleteStatement);
+    resultCode = sqlite3_finalize(deleteStatement);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
+
+    resultCode = sqlite3_close(database);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
 }
 
 File GoogleDriveCache::get(string fileId) {
     sqlite3 *database;
     int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
     if(resultCode != SQLITE_OK) {
-        cout << "Can't open database";
+        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
         sqlite3_close(database);
         throw -1;
     }
@@ -320,16 +377,13 @@ File GoogleDriveCache::get(string fileId) {
         s = reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 2));
         result.setMimeType(s);
 
-        s = reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 3));
-        result.setWebContentLink(s);
-
-        long temp = (long)sqlite3_column_int64(selectFileStatement, 4);
+        long temp = (long)sqlite3_column_int64(selectFileStatement, 3);
         result.setViewedByMeTime(temp);
 
-        temp = (long)sqlite3_column_int64(selectFileStatement, 5);
+        temp = (long)sqlite3_column_int64(selectFileStatement, 4);
         result.setModifiedTime(temp);
 
-        result.setSize(sqlite3_column_int(selectFileStatement, 6));
+        result.setSize(sqlite3_column_int(selectFileStatement, 5));
 
         resultCode = sqlite3_prepare_v2(database, "SELECT * FROM parent WHERE child = ?1;", -1, &selectParentsStatement, NULL);
         if(resultCode != SQLITE_OK) {
@@ -366,7 +420,6 @@ File GoogleDriveCache::get(string fileId) {
         sqlite3_close(database);
         throw -1;
     }
-    return result; //TODO
 
     resultCode = sqlite3_finalize(selectFileStatement);
     if(resultCode != SQLITE_OK) {
@@ -396,7 +449,7 @@ vector<string> GoogleDriveCache::getChildren(string fileId) {
     sqlite3 *database;
     int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
     if(resultCode != SQLITE_OK) {
-        cout << "Can't open database";
+        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
         sqlite3_close(database);
         throw -1;
     }
@@ -429,6 +482,13 @@ vector<string> GoogleDriveCache::getChildren(string fileId) {
 
 
     resultCode = sqlite3_finalize(selectParentsStatement);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
+
+    resultCode = sqlite3_close(database);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);

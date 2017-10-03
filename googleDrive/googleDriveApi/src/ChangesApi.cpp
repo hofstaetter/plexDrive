@@ -3,6 +3,8 @@
 //
 
 #include "changes/ChangesApi.h"
+#include "Response.h"
+#include "Request.h"
 
 StartPageToken
 ChangesApi::getStartPageToken(bool supportsTeamDrives, string teamDriveId, string alt, string fields, bool prettyPrint,
@@ -29,15 +31,15 @@ ChangesApi::getStartPageToken(bool supportsTeamDrives, string teamDriveId, strin
 
     //map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
 
-    long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes/startPageToken", "GET", querystring, {}, {}, "", responseHeaders, responseBody);
+    Response response = Request("https://www.googleapis.com", "/drive/v3/changes/startPageToken", "GET", querystring, {}, {}, "").execute();
 
     rapidjson::Document responseJson;
-    rapidjson::ParseResult pr = responseJson.Parse(responseBody.c_str());
+    rapidjson::ParseResult pr = responseJson.Parse(response.body.c_str());
     if(!pr) {
         printf("PARSE ERROR");
     }
 
-    if(responseCode != 200) throw responseJson;
+    if(response.httpStatusCode != 200) throw responseJson;
 
     return StartPageToken(responseJson);
 }
@@ -49,9 +51,6 @@ ChangeList ChangesApi::list(string pageToken, bool includeCorpusRemovals, bool i
     if(!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
     }
-
-    string responseBody;
-    string responseHeaders;
 
     map<string, string> querystring = { make_pair("pageToken", pageToken) };
     if(includeCorpusRemovals) querystring.insert(make_pair("includeCorpusRemovals", "true"));
@@ -75,15 +74,15 @@ ChangeList ChangesApi::list(string pageToken, bool includeCorpusRemovals, bool i
 
     //map<string, string> headers = { make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())) };
 
-    long responseCode = API::request("https://www.googleapis.com", "/drive/v3/changes", "GET", querystring, {}, {}, "", responseHeaders, responseBody);
+    Response response = Request("https://www.googleapis.com", "/drive/v3/changes", "GET", querystring, {}, {}, "").execute();
 
     rapidjson::Document responseJson;
-    rapidjson::ParseResult pr = responseJson.Parse(responseBody.c_str());
+    rapidjson::ParseResult pr = responseJson.Parse(response.body.c_str());
     if(!pr) {
         printf("PARSE ERROR");
     }
 
-    if(responseCode != 200) throw responseJson;
+    if(response.httpStatusCode != 200) throw responseJson;
 
     return ChangeList(responseJson);
 }

@@ -6,18 +6,19 @@
 #define PLEXDRIVE_GOOGLEDRIVEAPI_H
 
 #include <string>
+#include "files/File.h"
 
 using namespace std;
 
+extern int VERBOSE;
+extern string PATH;
+extern string CONFIG_PATH;
+
 class GoogleDriveApi {
 public:
-    static int VERBOSE;
-    static string PATH;
-    static string CONFIG_PATH;
-
     static void init(int verbose = 0, string config = ".");
 
-    static void download(string fileId);
+    static string download(string fileId, long from, long to);
 };
 
 

@@ -23,7 +23,7 @@ file(GLOB SOURCE_FILES
         include/*.h
         include/*/*.h
         src/*.cpp)
-add_library(googleDriveApi ${SOURCE_FILES} )
+add_library(googleDriveApi ${SOURCE_FILES} src/Request.cpp include/Request.h src/Response.cpp include/Response.h)
 
 target_link_libraries(googleDriveApi curl)
 if(Boost_FOUND)

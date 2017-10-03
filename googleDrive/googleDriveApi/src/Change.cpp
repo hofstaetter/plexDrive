@@ -7,15 +7,17 @@
 #include "teamdrives/TeamDrive.h"
 
 Change::Change() {
-    //this->document = new rapidjson::Document;
+    this->kind = "drive#change";
 }
 
 Change::Change(rapidjson::Document &document) {
     cout << "[DEBUG] Creating Change..." << endl;
-    /*this->document = new rapidjson::Document;
-    this->document->CopyFrom(document, (this->document)->GetAllocator());*/
-    if(document.HasMember("kind"))
+    if(document.HasMember("kind")) {
         this->kind = document["kind"].GetString();
+        if(this->kind != "drive#change") {
+            cout << "NOT A FILE" << endl;
+        }
+    }
     if(document.HasMember("type"))
         this->type = document["type"].GetString();
     if(document.HasMember("datetime"))

@@ -9,10 +9,17 @@
 
 File::File() {
     //this->document = new rapidjson::Document;
+    this->kind = "drive#file";
 }
 
 File::File(rapidjson::Document& document) {
     cout << "[DEBUG] Creating File..." << endl;
+    if(document.HasMember("kind")) {
+        this->kind = document["kind"].GetString();
+        if(this->kind != "drive#file") {
+            cout << "NOT A FILE" << endl;
+        }
+    }
     /*this->document = new rapidjson::Document;
     (*this->document).CopyFrom(document, (this->document)->GetAllocator());*/
     /*if(document.HasMember("kind"))

@@ -14,6 +14,7 @@
 class PlexDrive {
 private:
     static int VERBOSE;
+    static string PATH;
 
     static GoogleDrive gD;
 public:

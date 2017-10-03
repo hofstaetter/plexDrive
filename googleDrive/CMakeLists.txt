@@ -12,6 +12,7 @@ endif()
 find_package(curl)
 if(CURL_FOUND)
     include_directories(${CURL_INCLUDE_DIRS})
+    set(CMAKE_CXX_FLAGS "-DSQLITE_DEBUG")
 endif()
 
 include_directories(include googleDriveApi/include googleDriveApi/rapidjson/include/rapidjson)

@@ -5,12 +5,17 @@
 #include "changes/ChangeList.h"
 
 ChangeList::ChangeList() {
+    this->kind = "drive#changeList";
 }
 
 ChangeList::ChangeList(rapidjson::Document &document) {
     cout << "[DEBUG] " << "Creating ChangeList..." << endl;
-    if(document.HasMember("kind"))
+    if(document.HasMember("kind")) {
         this->kind = document["kind"].GetString();
+        if(this->kind != "drive#changeList") {
+            cout << "NOT A FILE" << endl;
+        }
+    }
     if(document.HasMember("nextPageToken"))
         this->nextPageToken = document["nextPageToken"].GetString();
     if(document.HasMember("newStartPageToken"))

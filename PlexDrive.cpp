@@ -3,12 +3,19 @@
 //
 
 #include <iostream>
+#include <cstdio>
 #include <string>
 #include <cerrno>
 #include <vector>
 #include <files/FilesApi.h>
+#include <fstream>
+#include <thread>
 #include "PlexDrive.h"
 #include "GoogleDrive.h"
+
+using namespace std;
+
+string PlexDrive::PATH = ".";
 
 static struct fuse_operations operations = {
         .init = PlexDrive::init,
@@ -35,7 +42,7 @@ void *PlexDrive::init(struct fuse_conn_info *conn) {
 }
 
 int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
-    cout << "[VERBOSE] getAddr " << path << endl;
+    //cout << "[VERBOSE] getAddr " << path << endl;
 
     memset(stbuf, 0, sizeof(struct stat));
 
@@ -46,16 +53,16 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
         stbuf->st_nlink = (f.getMimeType() == "application/vnd.google-apps.folder") ? 2 : 1;
         stbuf->st_size = (f.getMimeType() == "application/vnd.google-apps.folder") ? 0 : f.getSize();
         //TODO modifiedTimes
-        cout << "[VERBOSE] getAddr returns 0" << endl;
+        //cout << "[VERBOSE] getAddr returns 0" << endl;
         return 0;
     } catch (int e) {
-        cout << "[VERBOSE] getAddr returns -ENOENT" << endl;
+        //cout << "[VERBOSE] getAddr returns -ENOENT" << endl;
         return -ENOENT;
     }
 }
 
 int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
-    cout << "[VERBOSE] readDir " << path << endl;
+    //cout << "[VERBOSE] readDir " << path << endl;
 
     (void) offset;
     (void) fi;
@@ -68,6 +75,7 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
     try {
         fv = GoogleDrive::getDirectory(path);
 
+
         for(File f : fv) {
             filler(buf, f.getName().c_str(), NULL, 0);
         }
@@ -75,14 +83,25 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
     }
 
-    cout << "[VERBOSE] readDir returns 0" << endl;
+    //cout << "[VERBOSE] readDir returns 0" << endl;
     return 0;
 }
 
 int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
+    cout << "[VERBOSE] open " << path << endl;
     try {
-        GoogleDrive::getFile(path);
-        GoogleDrive::downloadFile(path);
+        File file = GoogleDrive::getFile(path);
+
+        /*FILE *file = fopen((PlexDrive::PATH + "/" + f.getId()).c_str(), "r");
+        if(!file) {
+            GoogleDrive::downloadFile(path);
+        } else {
+            fseek(file, 0, SEEK_END);
+            if (ftell(file) != f.getSize()) {
+                if (file) remove(f.getId().c_str());
+                GoogleDrive::downloadFile(path);
+            }
+        }*/
     } catch (int i) {
         return -ENOENT;
     }
@@ -92,30 +111,39 @@ int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
 }
 
 int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    cout << "[VERBOSE] read " << path << endl;
+    //cout << "[VERBOSE] read " << path << endl;
 
     File file = GoogleDrive::getFile(path);
+    GoogleDrive::downloadFile(path);
 
+    if(offset >= file.getSize())
+        return 0;
 
-
-    if (strcmp(path, "/test") == 0) {
-        size_t len = strlen("test");
-        if (offset >= len) {
-            cout << "[VERBOSE] returns 0" << endl;
-            return 0;
-        }
-
-        if (offset + size > len) {
-            memcpy(buf, "test" + offset, len - offset);
-            cout << "[VERBOSE] returns " << len - offset << endl;
-            return len - offset;
-        }
-
-        memcpy(buf, "test" + offset, size);
-        cout << "[VERBOSE] returns " << size << endl;
-        return size;
+    struct stat statbuffer;
+    int statResult;
+    statResult = stat(file.getId().c_str(), &statbuffer);
+    while(statResult != 0 || offset + size > statbuffer.st_size) {
+        //cout << "Waiting for file " << offset + size << ">" << statbuffer.st_size << endl;
+        this_thread::sleep_for(chrono::milliseconds(10));
+        statResult = stat(file.getId().c_str(), &statbuffer);
     }
 
-    cout << "[VERBOSE] returns -ENOENT" << endl;
-    return -ENOENT;
+    ifstream filestream;
+    if(offset + size > file.getSize()) {
+        filestream.open(file.getId().c_str(), ios::in || ios::binary);
+        filestream.seekg(offset, filestream.beg);
+        filestream.read(buf, size);
+        filestream.close();
+        return file.getSize() - offset;
+    }
+
+    filestream.open(file.getId().c_str(), ios::in || ios::binary);
+    filestream.seekg(offset, filestream.beg);
+    filestream.read(buf, size);
+    filestream.close();
+    return size;
+
+
+    /*cout << "[VERBOSE] returns -ENOENT" << endl;
+    return -ENOENT;*/
 }

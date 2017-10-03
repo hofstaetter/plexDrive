@@ -105,10 +105,6 @@ long
 API::request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string& responseHeaders, string& responseBody) {
     CURL *curl = curl_easy_init();
 
-    //timeout
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
-
-
     //build & set url
     string url;
 
@@ -150,7 +146,7 @@ API::request(string host, string path, string type, map<string, string> queryStr
 
     CURLcode result = curl_easy_perform(curl);
 
-    cout << "[VERBOSE] " << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << " " << bodyBuffer << endl;
+    cout << "[VERBOSE] " << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl; // " " << bodyBuffer << endl;
 
     long statuscode;
     if(result == CURLE_OK || result == CURLE_RECV_ERROR) { //TODO MACOSX FIX
@@ -177,9 +173,6 @@ API::request(string host, string path, string type, map<string, string> queryStr
 long
 API::request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body, string& responseHeaders, FILE *file) {
     CURL *curl = curl_easy_init();
-
-    //timeout
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
 
     //build & set url
     string url;
@@ -218,8 +211,12 @@ API::request(string host, string path, string type, map<string, string> queryStr
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaderBuffer);
 
+    cout << "[VERBOSE] " << type << " " << url << endl;
+
     //perform
     CURLcode result = curl_easy_perform(curl);
+
+    cout << "[VERBOSE] " << headerBuffer.substr(0, headerBuffer.find("\n") - 1) << endl;
 
     long statuscode;
     if(result == CURLE_OK || result == CURLE_RECV_ERROR) { //TODO MACOSX FIX

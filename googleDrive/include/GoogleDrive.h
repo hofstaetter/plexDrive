@@ -9,12 +9,16 @@
 #include <sqlite3.h>
 #include <boost/log/trivial.hpp>
 
+extern long CHUNK_SIZE;
+
 class GoogleDrive {
 private:
     static File root;
     static string pageToken;
     static string cachePath;
     static string configPath;
+    static vector<string> currentDownloads;
+
     static void getChanges();
 public:
     static int VERBOSE;
