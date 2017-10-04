@@ -15,6 +15,7 @@
 #include <GoogleDriveApi.h>
 #include <future>
 #include <sys/stat.h>
+#include <Response.h>
 
 int GoogleDrive::VERBOSE;
 string GoogleDrive::PATH;
@@ -40,7 +41,14 @@ std::vector<std::string> splitPath(const std::string &s, char delim) {
     return elems;
 }
 
+long long int GoogleDrive::updateTimestamp;
+
 File GoogleDrive::getFile(string path) {
+    long long int currentTimestamp = chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch()).count();
+    if(updateTimestamp + 5000 < currentTimestamp) {
+        getChanges();
+    }
+
     File current = GoogleDrive::root;
     if(path == "/") return current; //if root
 
@@ -54,8 +62,9 @@ File GoogleDrive::getFile(string path) {
 
     for(string s : GoogleDriveCache::getChildren(current.getId())) {
         if(GoogleDriveCache::get(s).getName() == folder) {
-            if(path.find("/") == string::npos)
+            if(path.find("/") == string::npos) {
                 return GoogleDriveCache::get(s);
+            }
             current = GoogleDriveCache::get(s);
             goto start;
         }
@@ -92,6 +101,8 @@ void GoogleDrive::init(int verbose, string path) {
 }
 
 void GoogleDrive::getChanges() {
+    GoogleDrive::updateTimestamp = chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch()).count();
+
     cout << "[VERBOSE] Updating cache..." << endl;
     if(GoogleDrive::pageToken.empty()) {
         GoogleDrive::pageToken = "1";
@@ -165,9 +176,9 @@ void GoogleDrive::getChanges() {
 vector<string> GoogleDrive::currentDownloads;
 
 void GoogleDrive::downloadFile(string path) {
-    vector<future<string>> futures;
+    vector<future<Response>> futures;
     vector<thread> threads;
-    vector<packaged_task<string(string,long,long)>> tasks;
+    vector<packaged_task<Response(string,long,long)>> tasks;
 
     File file = GoogleDrive::getFile(path);
 
@@ -190,7 +201,7 @@ void GoogleDrive::downloadFile(string path) {
 
     //create a task for each chunk
     for(int i = 0; i <= chunks; i++) {
-        tasks.push_back(packaged_task<string(string,long,long)>(GoogleDriveApi::download));
+        tasks.push_back(packaged_task<Response(string,long,long)>(GoogleDriveApi::download));
     }
 
     //download all chunks, 4 by 4
@@ -204,10 +215,22 @@ void GoogleDrive::downloadFile(string path) {
         for(int k = 0; k < j; k++) {
             threads[k].join();
 
-            ofstream filestream;
-            filestream.open(file.getId().c_str(), ios::app || ios::binary);
-            filestream << futures[k].get();
-            filestream.close();
+            Response response = futures[k].get();
+
+            //file not found
+            if(response.httpStatusCode == 404) {
+                GoogleDrive::getChanges();
+                throw exception();
+            }
+
+            //everything ok
+            if(response.httpStatusCode == 206) {
+                cout << "Write " << path << " to " << (i + 1) * CHUNK_SIZE - 1 << endl;
+                ofstream filestream;
+                filestream.open(file.getId().c_str(), ios::app || ios::binary);
+                filestream << response.body;
+                filestream.close();
+            }
         }
         threads.clear();
         futures.clear();
@@ -235,4 +258,15 @@ void GoogleDrive::downloadFile(string path) {
         }
         threads.push_back(async(launch::async, GoogleDriveApi::download, file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
     }*/
+}
+
+void GoogleDrive::createDirectory(string path) {
+    int pos = path.find_last_not_of("/");
+    File parent = getFile(path.substr(0, pos));
+
+    File file;
+    file.setMimeType("application/vnd.google-apps.folder");
+    file.setName(path.substr(pos, path.length()));
+
+    FilesApi::create("", false, false, "", false, false, file);
 }

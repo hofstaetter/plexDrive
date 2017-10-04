@@ -24,10 +24,10 @@ void GoogleDriveApi::init(int verbose, string path) {
     ::CONFIG_PATH = path + "/googleDriveApi.json";
 }
 
-string GoogleDriveApi::download(string fileId, long from, long to) {
+Response GoogleDriveApi::download(string fileId, long from, long to) {
     if (!GoogleOAuth::isAuthenticated()) {
         GoogleOAuth::authenticate();
     }
 
-    return Request("https://www.googleapis.com", string("/drive/v3/files/").append(fileId), "GET", { make_pair("alt", "media")}, {make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())), make_pair("Range", string("bytes=").append(to_string(from)).append("-").append(to_string(to)))}, {}, "").execute().body;
+    return Request("https://www.googleapis.com", string("/drive/v3/files/").append(fileId), "GET", { make_pair("alt", "media")}, {make_pair("Authorization", string("Bearer ").append(GoogleOAuth::getAccessToken())), make_pair("Range", string("bytes=").append(to_string(from)).append("-").append(to_string(to)))}, {}, "").execute();
 }

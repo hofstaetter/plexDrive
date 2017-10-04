@@ -48,11 +48,11 @@ void FileList::setIncompleteSearch(bool incompleteSearch) {
     FileList::incompleteSearch = incompleteSearch;
 }
 
-vector<File> &FileList::getFiles() {
+vector<File> FileList::getFiles() {
     return files;
 }
 
-void FileList::setFiles(vector<File> &files) {
+void FileList::setFiles(vector<File> files) {
     FileList::files = files;
 }
 

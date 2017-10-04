@@ -2,8 +2,6 @@
 // Created by Matthias Hofstätter on 11.09.17.
 //
 
-#include <fstream>
-#include <GoogleDriveApi.h>
 #include "oauth/GoogleOAuth.h"
 
 using namespace std;
@@ -17,16 +15,16 @@ time_t GoogleOAuth::expire;
 
 void GoogleOAuth::requestAuthorizationCode(string clientId, string redirectUri, string responseType, string scope, string state, string includeGrantedScopes,
                                            string loginHint, string prompt) {
-    string responseBody;
-    string responseHeaders;
-    long httpcode = API::request("https://accounts.google.com", "/o/oauth2/v2/auth", "POST", { make_pair("response_type", responseType), make_pair("client_id", clientId), make_pair("redirect_uri", redirectUri),
+
+    Response response = Request("https://accounts.google.com", "/o/oauth2/v2/auth", "POST", { make_pair("response_type", responseType), make_pair("client_id", clientId), make_pair("redirect_uri", redirectUri),
                                                                                                  make_pair("scope", scope) }, {},
                                             {}, //{ make_pair("code", authCode), make_pair("client_id", clientId), make_pair("client_secret", clientSecret), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("grant_type", "authorization_code") },
-                                            "", responseHeaders, responseBody);
+                                            "").execute();
 
-      if(httpcode != 302) { throw -1; }
+      if(response.httpStatusCode != 302) { throw exception(); }
 
-    cout << "Please visit following URL and paste the AuthCode below: " << responseHeaders.substr(responseHeaders.find("Location", 0) + 10, responseHeaders.find("\r\n", responseHeaders.find("Location", 0)) - responseHeaders.find("Location", 0) - 10) << endl;
+    cout << "Please visit following URL and paste the AuthCode below: " << response.header.substr(response.header.find("Location", 0) + 10, response.header.find("\r\n", response.header.find("Location", 0)) - response.header.find("Location", 0) - 10) << endl;
+    cout << "Insert Authcode here: " << endl;
     cin >> GoogleOAuth::authorizationCode;
 
     GoogleOAuth::clientId = clientId;
@@ -34,21 +32,19 @@ void GoogleOAuth::requestAuthorizationCode(string clientId, string redirectUri, 
 
 void GoogleOAuth::requestTokens(string clientId, string clientSecret) {
     if(GoogleOAuth::authorizationCode.empty() || GoogleOAuth::clientId.empty()) {
-        throw -1;
+        throw exception();
     }
 
-    string responseHeaders;
-    string responseBody;
-    long httpcode = API::request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { make_pair("prettyPrint", "false") },
+    Response response = Request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { make_pair("prettyPrint", "false") },
                                             { },
                                             { make_pair("grant_type", "authorization_code"), make_pair("code", GoogleOAuth::authorizationCode), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("client_id", clientId), make_pair("client_secret", clientSecret) }, //{ make_pair("code", authCode), make_pair("client_id", clientId), make_pair("client_secret", clientSecret), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("grant_type", "authorization_code") },
-                                            "", responseHeaders, responseBody);
+                                            "").execute();
     //{ make_pair("grant_type", "authorization_code"), make_pair("code", authCode), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("client_id", clientId), make_pair("client_secret", clientSecret) }
 
-    if(httpcode != 200) { throw responseBody; }
+    if(response.httpStatusCode != 200) { throw exception(); }
 
     rapidjson::Document responseJson;
-    rapidjson::ParseResult pr = responseJson.Parse(responseBody.c_str());
+    rapidjson::ParseResult pr = responseJson.Parse(response.body.c_str());
     if(!pr) {
         printf("PARSE ERROR");
     }
@@ -69,16 +65,13 @@ void GoogleOAuth::refreshAccessToken(string clientSecret, string grantType, stri
         return;
     }
 
-    string responseHeaders;
-    string responseBody;
-
-    long httpcode = API::request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { make_pair("prettyPrint", "false") },
+    Response response = Request("https://www.googleapis.com", "/oauth2/v4/token", "POST", { make_pair("prettyPrint", "false") },
                                  { },
                                    { make_pair("grant_type", "refresh_token"), make_pair("refresh_token", GoogleOAuth::refreshToken), make_pair("client_id", clientId), make_pair("client_secret", clientSecret) }, //{ make_pair("code", authCode), make_pair("client_id", clientId), make_pair("client_secret", clientSecret), make_pair("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"), make_pair("grant_type", "authorization_code") },
-                                   "", responseHeaders, responseBody);
+                                   "").execute();
 
     rapidjson::Document responseJson;
-    rapidjson::ParseResult pr = responseJson.Parse(responseBody.c_str());
+    rapidjson::ParseResult pr = responseJson.Parse(response.body.c_str());
     if(!pr) {
         printf("PARSE ERROR");
     }
@@ -126,6 +119,7 @@ void GoogleOAuth::authenticate() {
     }
 
     if(GoogleOAuth::isAuthenticated()) {
+        //TODO
         rapidjson::Document configuration(rapidjson::kObjectType);
         configuration.AddMember(rapidjson::StringRef("clientId"), rapidjson::StringRef(GoogleOAuth::clientId.c_str()), configuration.GetAllocator());
         configuration.AddMember(rapidjson::StringRef("clientSecret"), rapidjson::StringRef(GoogleOAuth::clientSecret.c_str()), configuration.GetAllocator());
@@ -169,7 +163,7 @@ bool GoogleOAuth::isAuthenticated() {
     return false;
 }
 
-string &GoogleOAuth::getAccessToken() {
+string GoogleOAuth::getAccessToken() {
     return GoogleOAuth::accessToken;
 }
 

@@ -35,8 +35,8 @@ public:
     bool isIncompleteSearch();
     void setIncompleteSearch(bool incompleteSearch);
 
-    vector<class File> &getFiles();
-    void setFiles(vector<class File> &files);
+    vector<File> getFiles();
+    void setFiles(vector<File> files);
 };
 
 

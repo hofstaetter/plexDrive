@@ -7,8 +7,10 @@
 
 #include <string>
 #include <map>
-#include <files/File.h>
+#include <exception>
 #include <sqlite3.h>
+#include <files/File.h>
+#include <GoogleDrive.h>
 
 using namespace std;
 
@@ -17,13 +19,17 @@ public:
     static string DB_PATH;
 
     static void init();
-    static void insert(File &f);
+    static void insert(File f);
     static void remove(string fileId);
     static File get(string fileId);
 
     static vector<string> getChildren(string fileId);
 private:
+    static mutex DATABASE_MUTEX;
+
     static void prepareDb();
+    static sqlite3 *openDb();
+    static void closeDb(sqlite3 *db);
 };
 
 

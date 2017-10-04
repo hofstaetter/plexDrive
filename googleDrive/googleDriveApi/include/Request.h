@@ -7,6 +7,8 @@
 
 #include <string>
 #include <map>
+#include <exception>
+
 #include "Response.h"
 
 using namespace std;
@@ -16,20 +18,22 @@ private:
     string host;
     string path;
     string type;
-    map<string, string> queryString;
-    map<string, string> header;
+    map<string, string> queryStrings;
+    map<string, string> headers;
     map<string, string> postFields;
     string body;
 
+    static size_t writeBuffer(char *ptr, size_t size, size_t nmemb, void *stream);
 public:
     Request();
-    Request(string host, string path, string type, map<string, string> queryString, map<string, string> header, map<string, string> postFields, string body);
+    Request(string host, string path, string type, map<string, string> queryString = {}, map<string, string> header = {}, map<string, string> postFields = {}, string body = "");
 
     Response execute();
 
     void addQueryString(string key, string value);
     void addHeader(string key, string value);
     void addPostField(string key, string value);
+    void setBody(string body);
 };
 
 

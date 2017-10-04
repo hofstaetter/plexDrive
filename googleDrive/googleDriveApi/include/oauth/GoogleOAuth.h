@@ -6,16 +6,21 @@
 #define GOOGLEDRIVEAPI_GOOGLEAPIAUTH_H
 
 #include <string>
+#include <fstream>
+
 #include <rapidjson.h>
 #include <document.h>
+
+#include <GoogleDriveApi.h>
 #include <files/FilesApi.h>
-#include <API.h>
+#include <Request.h>
+#include <Response.h>
 
 using namespace std;
 
 class GoogleOAuth {
 public:
-    static string &getAccessToken();
+    static string getAccessToken();
 
     static void authenticate();
     static bool isAuthenticated();

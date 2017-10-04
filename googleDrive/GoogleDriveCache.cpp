@@ -2,10 +2,10 @@
 // Created by Matthias Hofstätter on 29.09.17.
 //
 
-#include <GoogleDrive.h>
 #include "GoogleDriveCache.h"
 
 string GoogleDriveCache::DB_PATH;
+mutex GoogleDriveCache::DATABASE_MUTEX;
 
 void errorLogCallback(void *pArg, int iErrCode, const char *zMsg){
     fprintf(stderr, "(%d) %s\n", iErrCode, zMsg);
@@ -18,16 +18,10 @@ void GoogleDriveCache::init() {
 }
 
 void GoogleDriveCache::prepareDb() {
-    sqlite3 *database;
-    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
-    if(resultCode != SQLITE_OK) {
-        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
-        sqlite3_close(database);
-        throw -1;
-    }
+    sqlite3 *database = openDb();
 
     sqlite3_stmt *stmt;
-    resultCode = sqlite3_prepare_v2(database, "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, viewedByMeTime INTEGER NOT NULL, modifiedTime INTEGER NOT NULL, size INTEGER NOT NULL);", -1, &stmt, NULL);
+    int resultCode = sqlite3_prepare_v2(database, "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, viewedByMeTime INTEGER NOT NULL, modifiedTime INTEGER NOT NULL, size INTEGER NOT NULL);", -1, &stmt, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::initCache sqlite3_prepare_v2(" << "CREATE TABLE IF NOT EXISTS file(id TEXT PRIMARY_KEY NOT NULL, name TEXT NOT NULL, mimeType TEXT NOT NULL, modifiedTime TEXT NOT NULL, size INTEGER NOT NULL);" << ")";
         sqlite3_close(database);
@@ -123,28 +117,17 @@ void GoogleDriveCache::prepareDb() {
         throw -1;
     }
 
-    resultCode = sqlite3_close_v2(database);
-    if(resultCode != SQLITE_OK) {
-        cout << "ERROR";
-        sqlite3_close(database);
-        throw -1;
-    }
+    closeDb(database);
 }
 
-void GoogleDriveCache::insert(File &f) {
-    sqlite3 *database;
-    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
-    if(resultCode != SQLITE_OK) {
-        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
-        sqlite3_close(database);
-        throw -1;
-    }
+void GoogleDriveCache::insert(File f) {
+    sqlite3 *database = openDb();
 
     sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, NULL);
     
     sqlite3_stmt *insertStatement;
 
-    resultCode = sqlite3_prepare_v2(database, "INSERT OR REPLACE INTO file(id, name, mimeType, viewedByMeTime, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);", -1, &insertStatement, NULL);
+    int resultCode = sqlite3_prepare_v2(database, "INSERT OR REPLACE INTO file(id, name, mimeType, viewedByMeTime, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);", -1, &insertStatement, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_prepare_v2(" << "INSERT OR REPLACE INTO file(id, name, mimeType, webContentLink, modifiedTime, size) VALUES(?1, ?2, ?3, ?4, ?5, ?6);" << ")";
         sqlite3_close(database);
@@ -205,6 +188,13 @@ void GoogleDriveCache::insert(File &f) {
         throw -1;
     }
 
+    resultCode = sqlite3_clear_bindings(insertStatement);
+    if(resultCode != SQLITE_OK) {
+        cout << "GoogleDrive::insertIntoCache sqlite3_reset()";
+        sqlite3_close(database);
+        throw -1;
+    }
+
     resultCode = sqlite3_reset(insertStatement);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_reset()";
@@ -242,6 +232,13 @@ void GoogleDriveCache::insert(File &f) {
             throw -1;
         }
 
+        resultCode = sqlite3_clear_bindings(insertStatement);
+        if(resultCode != SQLITE_OK) {
+            cout << "GoogleDrive::insertIntoCache sqlite3_reset()";
+            sqlite3_close(database);
+            throw -1;
+        }
+
         resultCode = sqlite3_reset(insertStatement);
         if(resultCode != SQLITE_OK) {
             cout << "GoogleDrive::insertIntoCache sqlite3_reset()";
@@ -257,26 +254,15 @@ void GoogleDriveCache::insert(File &f) {
         throw -1;
     }
 
-    resultCode = sqlite3_close(database);
-    if(resultCode != SQLITE_OK) {
-        cout << "ERROR";
-        sqlite3_close(database);
-        throw -1;
-    }
+    closeDb(database);
 }
 
 void GoogleDriveCache::remove(string fileId) {
-    sqlite3 *database;
-    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
-    if(resultCode != SQLITE_OK) {
-        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
-        sqlite3_close(database);
-        throw -1;
-    }
+    sqlite3 *database = openDb();
 
     sqlite3_stmt *deleteStatement;
 
-    resultCode = sqlite3_prepare_v2(database, "DELETE FROM file WHERE id = '?1';", -1, &deleteStatement, NULL);
+    int resultCode = sqlite3_prepare_v2(database, "DELETE FROM file WHERE id = '?1';", -1, &deleteStatement, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);
@@ -332,26 +318,15 @@ void GoogleDriveCache::remove(string fileId) {
         throw -1;
     }
 
-    resultCode = sqlite3_close(database);
-    if(resultCode != SQLITE_OK) {
-        cout << "ERROR";
-        sqlite3_close(database);
-        throw -1;
-    }
+    closeDb(database);
 }
 
 File GoogleDriveCache::get(string fileId) {
-    sqlite3 *database;
-    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
-    if(resultCode != SQLITE_OK) {
-        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
-        sqlite3_close(database);
-        throw -1;
-    }
+    sqlite3 *database = openDb();
 
     sqlite3_stmt *selectFileStatement, *selectParentsStatement;;
 
-    resultCode = sqlite3_prepare_v2(database, "SELECT * FROM File WHERE id = ?1;", -1, &selectFileStatement, NULL);
+    int resultCode = sqlite3_prepare_v2(database, "SELECT * FROM File WHERE id = ?1;", -1, &selectFileStatement, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);
@@ -435,29 +410,18 @@ File GoogleDriveCache::get(string fileId) {
         throw -1;
     }
 
-    resultCode = sqlite3_close(database);
-    if(resultCode != SQLITE_OK) {
-        cout << "ERROR";
-        sqlite3_close(database);
-        throw -1;
-    }
+    closeDb(database);
 
     return result;
 }
 
 vector<string> GoogleDriveCache::getChildren(string fileId) {
-    sqlite3 *database;
-    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
-    if(resultCode != SQLITE_OK) {
-        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
-        sqlite3_close(database);
-        throw -1;
-    }
+    sqlite3 *database = openDb();
     
     sqlite3_stmt *selectParentsStatement;
     vector<string> result;
 
-    resultCode = sqlite3_prepare_v2(database, "SELECT * FROM parent WHERE parent = ?1;", -1, &selectParentsStatement, NULL);
+    int resultCode = sqlite3_prepare_v2(database, "SELECT * FROM parent WHERE parent = ?1;", -1, &selectParentsStatement, NULL);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::getChildren sqlite3_prepare_v2(" << "SELECT * FROM parent WHERE parent = ?1;" << ")";
         sqlite3_close(database);
@@ -488,12 +452,44 @@ vector<string> GoogleDriveCache::getChildren(string fileId) {
         throw -1;
     }
 
-    resultCode = sqlite3_close(database);
-    if(resultCode != SQLITE_OK) {
-        cout << "ERROR";
-        sqlite3_close(database);
-        throw -1;
-    }
+    closeDb(database);
     
     return result;
+}
+
+sqlite3 *GoogleDriveCache::openDb() {
+    DATABASE_MUTEX.lock();
+    sqlite3 *database;
+
+    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
+    if(resultCode != SQLITE_OK) {
+        cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
+        sqlite3_close(database);
+        throw exception();
+    }
+
+    return database;
+}
+
+void GoogleDriveCache::closeDb(sqlite3 *database) {
+    int resultCode = sqlite3_close(database);
+    if(resultCode == SQLITE_BUSY) {
+        //closing all statements
+        sqlite3_stmt *stmt;
+        while((stmt = sqlite3_next_stmt(database, NULL)) != NULL) {
+            resultCode = sqlite3_finalize(stmt);
+            if(resultCode != SQLITE_OK) {
+                cout << "[ERROR] " << "Can't finalize statement" << endl;
+                throw exception();
+            }
+        }
+
+        //try again
+        resultCode = sqlite3_close(database);
+    }
+    if(resultCode != SQLITE_OK) {
+        cout << "[ERROR] " << "Can't close database" << endl;
+        throw exception();
+    }
+    DATABASE_MUTEX.unlock();
 }

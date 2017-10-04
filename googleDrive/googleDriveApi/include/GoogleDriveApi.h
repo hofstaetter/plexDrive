@@ -6,6 +6,7 @@
 #define PLEXDRIVE_GOOGLEDRIVEAPI_H
 
 #include <string>
+#include "Response.h"
 #include "files/File.h"
 
 using namespace std;
@@ -18,7 +19,7 @@ class GoogleDriveApi {
 public:
     static void init(int verbose = 0, string config = ".");
 
-    static string download(string fileId, long from, long to);
+    static Response download(string fileId, long from, long to);
 };
 
 

@@ -18,7 +18,6 @@
 #include <vector>
 #include <iostream>
 #include "FilesApi.h"
-#include "API.h"
 #include "oauth/GoogleOAuth.h"
 #include "channels/Channel.h"
 
@@ -28,7 +27,7 @@ class FilesApi {
 public:
     static class File copy(std::string fileId, bool ignoreDefaultVisibility, bool keepRevisionForever, std::string ocrLanguage, bool supportsTeamDrives, File &requestBody,
                                     string alt = "", std::string fields = "", bool prettyPrint = false, std::string quotaUser = "", std::string userId = "");
-    static class File create(std::string uploadType, bool ignoreDefaultVisibility, bool keepRevisionForever, std::string ocrLanguage, bool supportsTeamDrives, bool useContentAsIndexableText, File &requestBody,
+    static class File create(std::string uploadType, bool ignoreDefaultVisibility, bool keepRevisionForever, std::string ocrLanguage, bool supportsTeamDrives, bool useContentAsIndexableText, File requestBody,
                                       string alt = "", std::string fields = "", bool prettyPrint = false, std::string quotaUser = "", std::string userId = "");
     static bool del(string fileId, bool supportsTeamDrives,
                     string alt = "", string fields = "", bool prettyPrint = false, string quotaUser = "", string userId = "");

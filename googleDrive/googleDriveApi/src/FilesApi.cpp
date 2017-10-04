@@ -79,9 +79,9 @@ FilesApi::copy(string fileId, bool ignoreDefaultVisibility, bool keepRevisionFor
 }
 
 File
-FilesApi::create(string uploadType, bool ignoreDefaultVisibility, bool keepRevisionForever, string ocrLanguage, bool supportsTeamDrives, bool useContentAsIndexableText, File& requestBody,
+FilesApi::create(string uploadType, bool ignoreDefaultVisibility, bool keepRevisionForever, string ocrLanguage, bool supportsTeamDrives, bool useContentAsIndexableText, File requestBody,
                        string alt, string fields, bool prettyPrint, string quotaUser, string userId) {
-    if(!(uploadType.compare("media") == 0 || uploadType.compare("multipart") == 0 || uploadType.compare("resumable") == 0)) {
+    if(uploadType.compare("media") == 0 || uploadType.compare("multipart") == 0 || uploadType.compare("resumable") == 0) {
         throw -1;
     }
 

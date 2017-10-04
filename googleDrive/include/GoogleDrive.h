@@ -5,9 +5,10 @@
 #ifndef PLEXDRIVE_GOOGLEDRIVE_H
 #define PLEXDRIVE_GOOGLEDRIVE_H
 
-#include <files/File.h>
+#include <exception>
+#include <chrono>
 #include <sqlite3.h>
-#include <boost/log/trivial.hpp>
+#include <files/File.h>
 
 extern long CHUNK_SIZE;
 
@@ -18,6 +19,7 @@ private:
     static string cachePath;
     static string configPath;
     static vector<string> currentDownloads;
+    static long long int updateTimestamp;
 
     static void getChanges();
 public:
@@ -29,6 +31,7 @@ public:
     static File getFile(string path);
     static vector<File> getDirectory(string path);
     static void downloadFile(string path);
+    static void createDirectory(string path);
 };
 
 

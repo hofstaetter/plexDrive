@@ -23,10 +23,6 @@ using namespace std;
 
 class File {
 private:
-public:
-    virtual ~File();
-
-private:
     string kind;
     string id;
     string name;

@@ -327,10 +327,6 @@ rapidjson::Document &File::toJSON() {
     return d;
 }
 
-File::~File() {
-    //cout << "[DEBUG] Destroying File with id " << this->id << "..." << endl;
-}
-
 /*string File::getKind() {
     return this->getString("kind");
 }

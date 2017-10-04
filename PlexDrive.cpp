@@ -23,6 +23,7 @@ static struct fuse_operations operations = {
         .readdir = PlexDrive::readDir,
         .open = PlexDrive::open,
         .read = PlexDrive::read,
+        .mkdir = PlexDrive::mkdir,
 };
 
 int main(int argc, char *argv[]) {
@@ -88,7 +89,7 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 }
 
 int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
-    cout << "[VERBOSE] open " << path << endl;
+    //cout << "[VERBOSE] open " << path << endl;
     try {
         File file = GoogleDrive::getFile(path);
 
@@ -111,10 +112,13 @@ int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
 }
 
 int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    //cout << "[VERBOSE] read " << path << endl;
+    cout << "[VERBOSE] read " << path << " from " << offset << " to " << offset + size << endl;
 
     File file = GoogleDrive::getFile(path);
-    GoogleDrive::downloadFile(path);
+    if(offset == 0) {
+        thread t(GoogleDrive::downloadFile, path);
+        t.detach();
+    }
 
     if(offset >= file.getSize())
         return 0;
@@ -127,6 +131,8 @@ int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, stru
         this_thread::sleep_for(chrono::milliseconds(10));
         statResult = stat(file.getId().c_str(), &statbuffer);
     }
+
+    cout << "[VERBOSE] read now " << path << " from " << offset << " to " << offset + size << endl;
 
     ifstream filestream;
     if(offset + size > file.getSize()) {
@@ -146,4 +152,10 @@ int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, stru
 
     /*cout << "[VERBOSE] returns -ENOENT" << endl;
     return -ENOENT;*/
+}
+
+int PlexDrive::mkdir(const char *path, mode_t mode) {
+    GoogleDrive::createDirectory(path);
+
+    return 0;
 }
