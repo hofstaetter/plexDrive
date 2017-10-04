@@ -17,17 +17,17 @@ using namespace std;
 
 string PlexDrive::PATH = ".";
 
-static struct fuse_operations operations = {
-        .init = PlexDrive::init,
-        .getattr = PlexDrive::getAttr,
-        .readdir = PlexDrive::readDir,
-        .open = PlexDrive::open,
-        .read = PlexDrive::read,
-        .mkdir = PlexDrive::mkdir,
-};
+static struct fuse_operations operations;
 
 int main(int argc, char *argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+    operations.init = PlexDrive::init;
+    operations.getattr = PlexDrive::getAttr;
+    operations.readdir = PlexDrive::readDir;
+    operations.open = PlexDrive::open;
+    operations.read = PlexDrive::read;
+    operations.mkdir = PlexDrive::mkdir;
 
     return fuse_main(argc, argv, &operations, NULL);
 }
@@ -136,14 +136,14 @@ int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, stru
 
     ifstream filestream;
     if(offset + size > file.getSize()) {
-        filestream.open(file.getId().c_str(), ios::in || ios::binary);
+        filestream.open(file.getId().c_str(), ios::in | ios::binary);
         filestream.seekg(offset, filestream.beg);
         filestream.read(buf, size);
         filestream.close();
         return file.getSize() - offset;
     }
 
-    filestream.open(file.getId().c_str(), ios::in || ios::binary);
+    filestream.open(file.getId().c_str(), ios::in | ios::binary);
     filestream.seekg(offset, filestream.beg);
     filestream.read(buf, size);
     filestream.close();
