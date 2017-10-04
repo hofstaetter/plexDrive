@@ -3,6 +3,9 @@ project(googleDrive)
 
 set(CMAKE_CXX_STANDARD 11)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 #boost
 find_package(Boost)
 if(Boost_FOUND)
@@ -22,7 +25,7 @@ add_subdirectory(googleDriveApi)
 set(SOURCE_FILES src/GoogleDrive.cpp include/GoogleDrive.h GoogleDriveCache.cpp GoogleDriveCache.h)
 add_library(googleDrive ${SOURCE_FILES})
 
-target_link_libraries(googleDrive googleDriveApi curl)
+target_link_libraries(googleDrive googleDriveApi curl ${CMAKE_THREAD_LIBS_INIT})
 
 if(Boost_FOUND)
     target_link_libraries(googleDriveApi ${Boost_LIBRARIES})
