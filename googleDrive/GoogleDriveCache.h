@@ -8,6 +8,7 @@
 #include <string>
 #include <map>
 #include <exception>
+#include <mutex>
 #include <sqlite3.h>
 #include <files/File.h>
 #include <GoogleDrive.h>
@@ -25,7 +26,7 @@ public:
 
     static vector<string> getChildren(string fileId);
 private:
-    static mutex DATABASE_MUTEX;
+    static std::mutex DATABASE_MUTEX;
 
     static void prepareDb();
     static sqlite3 *openDb();
