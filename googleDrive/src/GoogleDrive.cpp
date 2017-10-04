@@ -227,7 +227,7 @@ void GoogleDrive::downloadFile(string path) {
             if(response.httpStatusCode == 206) {
                 cout << "Write " << path << " to " << (i + 1) * CHUNK_SIZE - 1 << endl;
                 ofstream filestream;
-                filestream.open(file.getId().c_str(), std::ios::app || std::ios::binary);
+                filestream.open(file.getId().c_str(), std::ios::app | std::ios::binary);
                 filestream << response.body;
                 filestream.close();
             }
