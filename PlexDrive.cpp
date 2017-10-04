@@ -10,6 +10,7 @@
 #include <files/FilesApi.h>
 #include <fstream>
 #include <thread>
+#include <thread>
 #include "PlexDrive.h"
 #include "GoogleDrive.h"
 
