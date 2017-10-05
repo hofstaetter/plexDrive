@@ -15,10 +15,8 @@
 
 using namespace std;
 
-class GoogleDriveCache {
+class FileCache {
 public:
-    static string DB_PATH;
-
     static void init();
     static void insert(File f);
     static void remove(string fileId);

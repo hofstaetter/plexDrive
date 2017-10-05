@@ -2,21 +2,14 @@
 // Created by Matthias Hofstätter on 12.09.17.
 //
 
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <cerrno>
-#include <vector>
-#include <files/FilesApi.h>
-#include <fstream>
-#include <thread>
-#include <thread>
+
 #include "PlexDrive.h"
-#include "GoogleDrive.h"
 
 using namespace std;
 
-string PlexDrive::PATH = ".";
+int PLEXDRIVE_VERBOSE = 0;
+string PLEXDRIVE_PATH = ".";
+string PLEXDRIVE_MOUNT = ".";
 
 static struct fuse_operations operations;
 
@@ -30,21 +23,30 @@ int main(int argc, char *argv[]) {
     operations.read = PlexDrive::read;
     operations.mkdir = PlexDrive::mkdir;
 
+    for(int i = 0; i < argc; i++) {
+        if(strcmp("-c", argv[i]) == 0) {
+            PLEXDRIVE_PATH = argv[i + 1];
+            argc -= 2;
+        }
+    }
+
     return fuse_main(argc, argv, &operations, NULL);
 }
 
 
-int PlexDrive::VERBOSE = 0;
 
 void *PlexDrive::init(struct fuse_conn_info *conn) {
-    cout << "pleXDrive v0.0.1 | Frezy Software Studios" << endl;
-    PlexDrive::VERBOSE = 1;
-    GoogleDrive::init();
+    cout << "PlexDrive | Frezy Software Studios | @copy Matthias Hofstätter" << endl;
+
+    PLEXDRIVE_VERBOSE = 1;
+
+    GoogleDrive::init(PLEXDRIVE_VERBOSE, PLEXDRIVE_PATH);
+
     return nullptr;
 }
 
 int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
-    //cout << "[VERBOSE] getAddr " << path << endl;
+    //cout << "[VERBOSE] getAttr " << path << endl;
 
     memset(stbuf, 0, sizeof(struct stat));
 
@@ -55,10 +57,8 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
         stbuf->st_nlink = (f.getMimeType() == "application/vnd.google-apps.folder") ? 2 : 1;
         stbuf->st_size = (f.getMimeType() == "application/vnd.google-apps.folder") ? 0 : f.getSize();
         //TODO modifiedTimes
-        //cout << "[VERBOSE] getAddr returns 0" << endl;
         return 0;
     } catch (int e) {
-        //cout << "[VERBOSE] getAddr returns -ENOENT" << endl;
         return -ENOENT;
     }
 }
@@ -75,7 +75,8 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
     vector<File> fv;
 
     try {
-        fv = GoogleDrive::getDirectory(path);
+        File file = GoogleDrive::getFile(path);
+        fv = GoogleDrive::readDirectory(file);
 
 
         for(File f : fv) {
@@ -85,25 +86,14 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
     }
 
-    //cout << "[VERBOSE] readDir returns 0" << endl;
     return 0;
 }
 
 int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
     //cout << "[VERBOSE] open " << path << endl;
     try {
-        File file = GoogleDrive::getFile(path);
-
-        /*FILE *file = fopen((PlexDrive::PATH + "/" + f.getId()).c_str(), "r");
-        if(!file) {
-            GoogleDrive::downloadFile(path);
-        } else {
-            fseek(file, 0, SEEK_END);
-            if (ftell(file) != f.getSize()) {
-                if (file) remove(f.getId().c_str());
-                GoogleDrive::downloadFile(path);
-            }
-        }*/
+        //File file = GoogleDrive::getFile(path);
+        //TODO check online status here?
     } catch (int i) {
         return -ENOENT;
     }
@@ -113,18 +103,18 @@ int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
 }
 
 int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    cout << "[VERBOSE] read " << path << " from " << offset << " to " << offset + size << endl;
+    //cout << "[VERBOSE] read " << path << " from " << offset << " to " << offset + size << endl;
 
     File file = GoogleDrive::getFile(path);
-    if(offset == 0) {
-        thread t(GoogleDrive::downloadFile, path);
-        t.detach();
-    }
 
     if(offset >= file.getSize())
         return 0;
 
-    struct stat statbuffer;
+    int count = GoogleDrive::readFile(file, buf, size, offset);
+
+    return count;
+
+    /*struct stat statbuffer;
     int statResult;
     statResult = stat(file.getId().c_str(), &statbuffer);
     while(statResult != 0 || offset + size > statbuffer.st_size) {
@@ -148,7 +138,7 @@ int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, stru
     filestream.seekg(offset, filestream.beg);
     filestream.read(buf, size);
     filestream.close();
-    return size;
+    return size;*/
 
 
     /*cout << "[VERBOSE] returns -ENOENT" << endl;

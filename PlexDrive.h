@@ -5,18 +5,29 @@
 #ifndef PLEXDRIVE_PLEXDRIVE_H
 #define PLEXDRIVE_PLEXDRIVE_H
 
-#define FUSE_USE_VERSION 31
+#define FUSE_USE_VERSION 32
 
+#include <iostream>
+#include <cstdio>
+#include <string>
+#include <cerrno>
+#include <vector>
+#include <files/FilesApi.h>
+#include <fstream>
+#include <thread>
+#include <thread>
 #include <fuse.h>
 #include <boost/log/trivial.hpp>
+
+#include "GoogleDrive.h"
+#include "PlexDrive.h"
 #include "GoogleDrive.h"
 
-class PlexDrive {
-private:
-    static int VERBOSE;
-    static string PATH;
+extern int PLEXDRIVE_VERBOSE;
+extern string PLEXDRIVE_PATH;
+extern string PLEXDRIVE_MOUNT;
 
-    static GoogleDrive gD;
+class PlexDrive {
 public:
     static void *init(struct fuse_conn_info *conn);
     static int getAttr(const char *path, struct stat *stbuf);

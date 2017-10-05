@@ -2,22 +2,15 @@
 // Created by Matthias Hofstätter on 29.09.17.
 //
 
-#include "GoogleDriveCache.h"
+#include "FileCache.h"
 
-string GoogleDriveCache::DB_PATH;
-mutex GoogleDriveCache::DATABASE_MUTEX;
+mutex FileCache::DATABASE_MUTEX;
 
-void errorLogCallback(void *pArg, int iErrCode, const char *zMsg){
-    fprintf(stderr, "(%d) %s\n", iErrCode, zMsg);
+void FileCache::init() {
+    FileCache::prepareDb();
 }
 
-void GoogleDriveCache::init() {
-    GoogleDriveCache::DB_PATH = GoogleDrive::PATH + "/googleDrive.sqlite";
-
-    GoogleDriveCache::prepareDb();
-}
-
-void GoogleDriveCache::prepareDb() {
+void FileCache::prepareDb() {
     sqlite3 *database = openDb();
 
     sqlite3_stmt *stmt;
@@ -120,10 +113,8 @@ void GoogleDriveCache::prepareDb() {
     closeDb(database);
 }
 
-void GoogleDriveCache::insert(File f) {
+void FileCache::insert(File f) {
     sqlite3 *database = openDb();
-
-    sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, NULL);
     
     sqlite3_stmt *insertStatement;
 
@@ -257,7 +248,7 @@ void GoogleDriveCache::insert(File f) {
     closeDb(database);
 }
 
-void GoogleDriveCache::remove(string fileId) {
+void FileCache::remove(string fileId) {
     sqlite3 *database = openDb();
 
     sqlite3_stmt *deleteStatement;
@@ -321,7 +312,7 @@ void GoogleDriveCache::remove(string fileId) {
     closeDb(database);
 }
 
-File GoogleDriveCache::get(string fileId) {
+File FileCache::get(string fileId) {
     sqlite3 *database = openDb();
 
     sqlite3_stmt *selectFileStatement, *selectParentsStatement;;
@@ -415,7 +406,7 @@ File GoogleDriveCache::get(string fileId) {
     return result;
 }
 
-vector<string> GoogleDriveCache::getChildren(string fileId) {
+vector<string> FileCache::getChildren(string fileId) {
     sqlite3 *database = openDb();
     
     sqlite3_stmt *selectParentsStatement;
@@ -457,11 +448,11 @@ vector<string> GoogleDriveCache::getChildren(string fileId) {
     return result;
 }
 
-sqlite3 *GoogleDriveCache::openDb() {
+sqlite3 *FileCache::openDb() {
     DATABASE_MUTEX.lock();
     sqlite3 *database;
 
-    int resultCode = sqlite3_open(GoogleDriveCache::DB_PATH.c_str(), &database);
+    int resultCode = sqlite3_open((GOOGLEDRIVE_PATH + "/googleDrive.sqlite").c_str(), &database);
     if(resultCode != SQLITE_OK) {
         cout << "[ERROR] Can't open db: " << sqlite3_errmsg(database) << endl;
         sqlite3_close(database);
@@ -471,7 +462,7 @@ sqlite3 *GoogleDriveCache::openDb() {
     return database;
 }
 
-void GoogleDriveCache::closeDb(sqlite3 *database) {
+void FileCache::closeDb(sqlite3 *database) {
     int resultCode = sqlite3_close(database);
     if(resultCode == SQLITE_BUSY) {
         //closing all statements

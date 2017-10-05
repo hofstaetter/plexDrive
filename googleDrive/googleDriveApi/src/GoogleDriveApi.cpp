@@ -14,14 +14,14 @@
 
 using namespace std;
 
-int VERBOSE = 0;
-string PATH = ".";
-string CONFIG_PATH = ".";
+int GOOGLEDRIVEAPI_VERBOSE = 0;
+string GOOGLEDRIVEAPI_PATH = ".";
+string GOOGLEDRIVEAPI_CONFIG = "/googleDriveApi.json";
 
 void GoogleDriveApi::init(int verbose, string path) {
-    ::VERBOSE = verbose;
-    ::PATH = path;
-    ::CONFIG_PATH = path + "/googleDriveApi.json";
+    GOOGLEDRIVEAPI_VERBOSE = verbose;
+    GOOGLEDRIVEAPI_PATH = path;
+    GOOGLEDRIVEAPI_CONFIG = path + "/googleDriveApi.json";
 }
 
 Response GoogleDriveApi::download(string fileId, long from, long to) {

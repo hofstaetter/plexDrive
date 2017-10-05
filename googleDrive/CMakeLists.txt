@@ -22,7 +22,7 @@ include_directories(include googleDriveApi/include googleDriveApi/rapidjson/incl
 
 add_subdirectory(googleDriveApi)
 
-set(SOURCE_FILES src/GoogleDrive.cpp include/GoogleDrive.h GoogleDriveCache.cpp GoogleDriveCache.h)
+set(SOURCE_FILES src/GoogleDrive.cpp include/GoogleDrive.h FileCache.cpp FileCache.h ChunkCache.cpp ChunkCache.h)
 add_library(googleDrive ${SOURCE_FILES})
 
 target_link_libraries(googleDrive googleDriveApi curl ${CMAKE_THREAD_LIBS_INIT})

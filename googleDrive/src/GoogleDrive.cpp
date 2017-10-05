@@ -2,25 +2,11 @@
 // Created by Matthias Hofstätter on 19.09.17.
 //
 
-#include <changes/Change.h>
-#include <changes/ChangesApi.h>
-#include <files/File.h>
-#include <files/FilesApi.h>
-#include <fstream>
-#include <thread>
 #include "GoogleDrive.h"
-#include "../GoogleDriveCache.h"
 
-#include <files/FilesApi.h>
-#include <GoogleDriveApi.h>
-#include <future>
-#include <sys/stat.h>
-#include <Response.h>
-
-int GoogleDrive::VERBOSE;
-string GoogleDrive::PATH;
-
-long CHUNK_SIZE = 10485760;
+string GOOGLEDRIVE_PATH;
+string GOOGLEDRIVE_CONFIG;
+int GOOGLEDRIVE_VERBOSE;
 
 File GoogleDrive::root;
 string GoogleDrive::pageToken;
@@ -45,7 +31,7 @@ long long int GoogleDrive::updateTimestamp;
 
 File GoogleDrive::getFile(string path) {
     long long int currentTimestamp = chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch()).count();
-    if(updateTimestamp + 5000 < currentTimestamp) {
+    if(updateTimestamp + 30000 < currentTimestamp) {
         getChanges();
     }
 
@@ -60,12 +46,12 @@ File GoogleDrive::getFile(string path) {
         path = path.substr(path.find("/"), path.length());
     }
 
-    for(string s : GoogleDriveCache::getChildren(current.getId())) {
-        if(GoogleDriveCache::get(s).getName() == folder) {
+    for(string s : FileCache::getChildren(current.getId())) {
+        if(FileCache::get(s).getName() == folder) {
             if(path.find("/") == string::npos) {
-                return GoogleDriveCache::get(s);
+                return FileCache::get(s);
             }
-            current = GoogleDriveCache::get(s);
+            current = FileCache::get(s);
             goto start;
         }
     }
@@ -73,13 +59,13 @@ File GoogleDrive::getFile(string path) {
     throw -1;
 }
 
-vector<File> GoogleDrive::getDirectory(string path) {
+vector<File> GoogleDrive::readDirectory(File file) {
     vector<File> result;
 
-    vector<string> temp = GoogleDriveCache::getChildren(getFile(path).getId());
+    vector<string> temp = FileCache::getChildren(file.getId());
 
-    for(string s : GoogleDriveCache::getChildren(getFile(path).getId())) {
-        File f = GoogleDriveCache::get(s);
+    for(string s : FileCache::getChildren(file.getId())) {
+        File f = FileCache::get(s);
         result.push_back(f);
     }
 
@@ -87,13 +73,13 @@ vector<File> GoogleDrive::getDirectory(string path) {
 }
 
 void GoogleDrive::init(int verbose, string path) {
-    //cout << "GoogleDrive v0.0.1 | Frezy Software Studios";
-    GoogleDrive::VERBOSE = verbose;
-    GoogleDrive::PATH = path;
+    GOOGLEDRIVE_PATH = path;
+    GOOGLEDRIVE_CONFIG = path + "/googleDrive.json";
+    GOOGLEDRIVE_VERBOSE = verbose;
 
-    GoogleDriveCache::init();
+    FileCache::init();
 
-    GoogleDriveApi::init();
+    GoogleDriveApi::init(GOOGLEDRIVE_VERBOSE, GOOGLEDRIVE_PATH);
 
     GoogleDrive::root = FilesApi::get("root");
 
@@ -103,11 +89,11 @@ void GoogleDrive::init(int verbose, string path) {
 void GoogleDrive::getChanges() {
     GoogleDrive::updateTimestamp = chrono::duration_cast< chrono::milliseconds >(chrono::system_clock::now().time_since_epoch()).count();
 
-    cout << "[VERBOSE] Updating cache..." << endl;
+    //cout << "[VERBOSE] Updating cache..." << endl;
     if(GoogleDrive::pageToken.empty()) {
         GoogleDrive::pageToken = "1";
         rapidjson::Document configuration(rapidjson::kObjectType);
-        ifstream file("googleDrive.json");
+        ifstream file(GOOGLEDRIVE_CONFIG);
         if (file.is_open()) {
             string configurationstring;
             file >> configurationstring;
@@ -122,7 +108,7 @@ void GoogleDrive::getChanges() {
     }
 
     if(ChangesApi::getStartPageToken().getStartPageToken().c_str() == GoogleDrive::pageToken) {
-        cout << "[VERBOSE] Cache already up to date." << endl;
+        //cout << "[VERBOSE] Cache already up to date." << endl;
         return;
     }
 
@@ -140,10 +126,10 @@ void GoogleDrive::getChanges() {
 
         for(Change &c : cl.getChanges()) {
             if(c.isRemoved()) {
-                GoogleDriveCache::remove(c.getFile().getId());
+                FileCache::remove(c.getFile().getId());
             } else {
                 File f = c.getFile();
-                GoogleDriveCache::insert(f);
+                FileCache::insert(f);
             }
         }
 
@@ -160,7 +146,7 @@ void GoogleDrive::getChanges() {
         configuration.Accept(writer);
 
         string configurationstring = buffer.GetString();
-        ofstream file("googleDrive.json");
+        ofstream file(GOOGLEDRIVE_CONFIG);
         file << configurationstring;
         file.close();
 
@@ -173,93 +159,6 @@ void GoogleDrive::getChanges() {
     GoogleDrive::pageToken = cl.getNewStartPageToken();
 }
 
-vector<string> GoogleDrive::currentDownloads;
-
-void GoogleDrive::downloadFile(string path) {
-    vector<future<Response>> futures;
-    vector<thread> threads;
-    vector<packaged_task<Response(string,long,long)>> tasks;
-
-    File file = GoogleDrive::getFile(path);
-
-    //file exists already?
-    struct stat statbuffer;
-    int statResult = stat(file.getId().c_str(), &statbuffer);
-    if(statResult == 0 && statbuffer.st_size == file.getSize()) {
-        return;
-    }
-
-    long chunks = file.getSize() / CHUNK_SIZE;
-
-    //currently downloading?
-    for(int i = 0; i < currentDownloads.size(); i++) {
-        if(currentDownloads[i] == file.getId()) return;
-    }
-
-    //add to currently downloading
-    currentDownloads.push_back(file.getId());
-
-    //create a task for each chunk
-    for(int i = 0; i <= chunks; i++) {
-        tasks.push_back(packaged_task<Response(string,long,long)>(GoogleDriveApi::download));
-    }
-
-    //download all chunks, 4 by 4
-    for(int i = 0; i < tasks.size();) {
-        int j;
-        for(j = 0; i < tasks.size() && threads.size() != 4; j++) {
-            futures.push_back(tasks[i].get_future());
-            threads.push_back(thread(move(tasks[i]), file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
-            i++;
-        }
-        for(int k = 0; k < j; k++) {
-            threads[k].join();
-
-            Response response = futures[k].get();
-
-            //file not found
-            if(response.httpStatusCode == 404) {
-                GoogleDrive::getChanges();
-                throw exception();
-            }
-
-            //everything ok
-            if(response.httpStatusCode == 206) {
-                cout << "Write " << path << " to " << (i + 1) * CHUNK_SIZE - 1 << endl;
-                ofstream filestream;
-                filestream.open(file.getId().c_str(), std::ios::app | std::ios::binary);
-                filestream << response.body;
-                filestream.close();
-            }
-        }
-        threads.clear();
-        futures.clear();
-    }
-
-    //remove from currently downloading
-    for(int i = 0; i < currentDownloads.size(); i++) {
-        if(currentDownloads[i] == file.getId()) currentDownloads.erase(currentDownloads.begin() + i);
-    }
-
-    /*for(int i = 0; (i < 4 && i < chunks); i++) {
-        threads.push_back(async(launch::async, GoogleDriveApi::download, file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
-    }
-
-    for(int i = 4; i <= chunks; i++) {
-        bool threadready = false;
-        long count = 0;
-        while(!threadready) {
-            if(threads[count % 4].wait_for(chrono::milliseconds(1)) == future_status::ready) {
-                threads[count % 4].get;
-                threads.erase(threads.begin() + (count % 4));
-                threadready = true;
-            }
-            count++;
-        }
-        threads.push_back(async(launch::async, GoogleDriveApi::download, file.getId(), i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE - 1));
-    }*/
-}
-
 void GoogleDrive::createDirectory(string path) {
     int pos = path.find_last_not_of("/");
     File parent = getFile(path.substr(0, pos));
@@ -269,4 +168,8 @@ void GoogleDrive::createDirectory(string path) {
     file.setName(path.substr(pos, path.length()));
 
     FilesApi::create("", false, false, "", false, false, file);
+}
+
+int GoogleDrive::readFile(File file, char *buf, size_t size, off_t offset) {
+    return ChunkCache::read(file, buf, size, offset);
 }

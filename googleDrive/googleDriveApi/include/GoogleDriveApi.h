@@ -11,9 +11,9 @@
 
 using namespace std;
 
-extern int VERBOSE;
-extern string PATH;
-extern string CONFIG_PATH;
+extern int GOOGLEDRIVEAPI_VERBOSE;
+extern string GOOGLEDRIVEAPI_PATH;
+extern string GOOGLEDRIVEAPI_CONFIG;
 
 class GoogleDriveApi {
 public:
