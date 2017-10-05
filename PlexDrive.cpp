@@ -70,18 +70,21 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
 
 int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
     cout << "[DEBUG] PlexDrive::readDir(" << path << ")" << endl;
-
     (void) offset;
     (void) fi;
 
     filler(buf, ".", NULL, 0);
+    cout << "[DEBUG] PlexDrive::readDir(" << path << ") added " << "." << endl;
     filler(buf, "..", NULL, 0);
+    cout << "[DEBUG] PlexDrive::readDir(" << path << ") added " << ".." << endl;
 
     vector<File> fv;
 
     try {
         File file = GoogleDrive::getFile(path);
+        cout << "[DEBUG] PlexDrive::readDir(" << path << ") got " << file.getName() << endl;
         fv = GoogleDrive::readDirectory(file);
+        cout << "[DEBUG] PlexDrive::readDir(" << path << ") got directory from cache" << endl;
 
         for(File f : fv) {
             filler(buf, f.getName().c_str(), NULL, 0);
@@ -127,36 +130,6 @@ int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, stru
     cout << "[DEBUG] PlexDrive::read(" << path << ", " << size << ", " << offset << ") returns " << 0 << endl;
 
     return count;
-
-    /*struct stat statbuffer;
-    int statResult;
-    statResult = stat(file.getId().c_str(), &statbuffer);
-    while(statResult != 0 || offset + size > statbuffer.st_size) {
-        //cout << "Waiting for file " << offset + size << ">" << statbuffer.st_size << endl;
-        this_thread::sleep_for(chrono::milliseconds(10));
-        statResult = stat(file.getId().c_str(), &statbuffer);
-    }
-
-    cout << "[VERBOSE] read now " << path << " from " << offset << " to " << offset + size << endl;
-
-    ifstream filestream;
-    if(offset + size > file.getSize()) {
-        filestream.open(file.getId().c_str(), ios::in | ios::binary);
-        filestream.seekg(offset, filestream.beg);
-        filestream.read(buf, size);
-        filestream.close();
-        return file.getSize() - offset;
-    }
-
-    filestream.open(file.getId().c_str(), ios::in | ios::binary);
-    filestream.seekg(offset, filestream.beg);
-    filestream.read(buf, size);
-    filestream.close();
-    return size;*/
-
-
-    /*cout << "[VERBOSE] returns -ENOENT" << endl;
-    return -ENOENT;*/
 }
 
 int PlexDrive::mkdir(const char *path, mode_t mode) {
