@@ -328,6 +328,14 @@ File FileCache::get(string fileId) {
     }
     cout << "[DEBUG] FileCache::get(" << fileId << ") prepared file statement" << endl;
 
+    resultCode = sqlite3_prepare_v2(database, "SELECT * FROM parent WHERE child = ?1;", -1, &selectParentsStatement, NULL);
+    if(resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
+    }
+    cout << "[DEBUG] FileCache::get(" << fileId << ") prepared parent statement" << endl;
+
     resultCode = sqlite3_bind_text(selectFileStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
@@ -361,14 +369,6 @@ File FileCache::get(string fileId) {
 
         result.setSize(sqlite3_column_int(selectFileStatement, 5));
         cout << "[DEBUG] FileCache::get(" << fileId << ") got size" << endl;
-
-        resultCode = sqlite3_prepare_v2(database, "SELECT * FROM parent WHERE child = ?1;", -1, &selectParentsStatement, NULL);
-        if(resultCode != SQLITE_OK) {
-            cout << "ERROR";
-            sqlite3_close(database);
-            throw -1;
-        }
-        cout << "[DEBUG] FileCache::get(" << fileId << ") prepared parent statement" << endl;
 
         resultCode = sqlite3_bind_text(selectParentsStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
         if(resultCode != SQLITE_OK) {
@@ -410,15 +410,13 @@ File FileCache::get(string fileId) {
     }
     cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectFileStatement" << endl;
 
-    if(selectParentsStatement != NULL) {
-        resultCode = sqlite3_finalize(selectParentsStatement);
-        if (resultCode != SQLITE_OK) {
-            cout << "ERROR";
-            sqlite3_close(database);
-            throw -1;
-        }
-        cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectParentsStatement" << endl;
+    resultCode = sqlite3_finalize(selectParentsStatement);
+    if (resultCode != SQLITE_OK) {
+        cout << "ERROR";
+        sqlite3_close(database);
+        throw -1;
     }
+    cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectParentsStatement" << endl;
 
     closeDb(database);
 
