@@ -60,6 +60,7 @@ File GoogleDrive::getFile(string path) {
 }
 
 vector<File> GoogleDrive::readDirectory(File file) {
+    cout << "[DEBUG] GoogleDrive::readDirectory(" << file.getName() << ")" << endl;
     vector<File> result;
 
     vector<string> temp = FileCache::getChildren(file.getId());

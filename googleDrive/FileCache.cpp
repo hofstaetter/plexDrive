@@ -313,6 +313,8 @@ void FileCache::remove(string fileId) {
 }
 
 File FileCache::get(string fileId) {
+    cout << "[DEBUG] FileCache::get(" << fileId << ")" << endl;
+
     sqlite3 *database = openDb();
 
     sqlite3_stmt *selectFileStatement, *selectParentsStatement;;
@@ -407,6 +409,7 @@ File FileCache::get(string fileId) {
 }
 
 vector<string> FileCache::getChildren(string fileId) {
+    cout << "[DEBUG] FileCache::getChildren(" << fileId << ")" << endl;
     sqlite3 *database = openDb();
     
     sqlite3_stmt *selectParentsStatement;
@@ -449,7 +452,10 @@ vector<string> FileCache::getChildren(string fileId) {
 }
 
 sqlite3 *FileCache::openDb() {
+    cout << "[DEBUG] FileCache::openDb()" << endl;
+
     DATABASE_MUTEX.lock();
+    cout << "[DEBUG] FileCache::openDb() locked mutex" << endl;
     sqlite3 *database;
 
     int resultCode = sqlite3_open((GOOGLEDRIVE_PATH + "/googleDrive.sqlite").c_str(), &database);
@@ -463,6 +469,7 @@ sqlite3 *FileCache::openDb() {
 }
 
 void FileCache::closeDb(sqlite3 *database) {
+    cout << "[DEBUG] FileCache::closeDb()" << endl;
     int resultCode = sqlite3_close(database);
     if(resultCode == SQLITE_BUSY) {
         //closing all statements
@@ -483,4 +490,5 @@ void FileCache::closeDb(sqlite3 *database) {
         throw exception();
     }
     DATABASE_MUTEX.unlock();
+    cout << "[DEBUG] FileCache::closeDb() released mutex" << endl;
 }
