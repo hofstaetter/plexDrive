@@ -10,7 +10,7 @@
 long ChunkCache::CHUNK_SIZE = 10485760;
 
 int ChunkCache::read(File file, char *buf, size_t size, off_t offset) {
-    //cout << "[VERBOSE] reading chunk " << file.getId() << " from " << offset << " to " << (offset + size) << endl;
+    cout << "[DEBUG] ChunkCache::read(" << file.getId() << ", " << size << ", " << offset << ")" << endl;
     if(offset > file.getSize() || size == 0)
         return 0;
 
@@ -31,6 +31,8 @@ int ChunkCache::read(File file, char *buf, size_t size, off_t offset) {
             statResult = stat((GOOGLEDRIVE_PATH + "/" + file.getId() + "." + to_string(i)).c_str(), &statbuffer);
         }
 
+        cout << "[DEBUG] " << file.getId() << "." << i << " ready for reading" << endl;
+
         ifstream filestream;
         filestream.open((GOOGLEDRIVE_PATH + "/" + file.getId() + "." + to_string(i)).c_str(), ios::in | ios::binary);
         if(filestream.is_open()) {
@@ -50,13 +52,16 @@ int ChunkCache::read(File file, char *buf, size_t size, off_t offset) {
                 bytesWritten += ChunkCache::CHUNK_SIZE;
             }
         } else { throw exception(); }
-        //filestream.close();
+        filestream.close();
     }
+
+    cout << "[DEBUG] ChunkCache::read(" << file.getId() << ", " << size << ", " << offset << ") returns " << size << endl;
 
     return size;
 }
 
 void ChunkCache::download(File file, size_t size, off_t offset) {
+    cout << "[DEBUG] ChunkCache::download(" << file.getId() << ", " << size << ", " << offset << ")" << endl;
     if(offset > file.getSize() || size == 0) return;
 
     if(offset + size > file.getSize()) size = file.getSize() - offset;
@@ -95,12 +100,15 @@ void ChunkCache::download(File file, size_t size, off_t offset) {
                     } else { throw exception(); }
                     filestream.close();
 
+                    cout << "[VERBOSE] written " << file.getId() << "." << iter->first << endl;
+
                     threads.erase(iter);
                     break;
                 }
             }
         }
     }
+    cout << "[DEBUG] ChunkCache::download(" << file.getId() << ", " << size << ", " << offset << ") returns" << endl;
 }
 
 bool ChunkCache::isChunk(File file, int part) {

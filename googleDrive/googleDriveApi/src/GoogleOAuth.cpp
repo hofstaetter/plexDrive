@@ -27,6 +27,8 @@ void GoogleOAuth::requestAuthorizationCode(string clientId, string redirectUri, 
     cout << "Insert Authcode here: " << endl;
     cin >> GoogleOAuth::authorizationCode;
 
+    cout << "[VERBOSE] got authorization code " << GoogleOAuth::authorizationCode << endl;
+
     GoogleOAuth::clientId = clientId;
 }
 
@@ -54,6 +56,9 @@ void GoogleOAuth::requestTokens(string clientId, string clientSecret) {
         GoogleOAuth::accessToken = responseJson["access_token"].GetString();
         GoogleOAuth::expire = time(NULL) + 3600;
     } else { throw responseJson; }
+
+    cout << "[VERBOSE] got refresh token " << GoogleOAuth::refreshToken << endl;
+    cout << "[VERBOSE] got access token " << GoogleOAuth::accessToken << endl;
 }
 
 void GoogleOAuth::refreshAccessToken(string clientSecret, string grantType, string refreshToken, string clientId) {
@@ -80,6 +85,8 @@ void GoogleOAuth::refreshAccessToken(string clientSecret, string grantType, stri
         GoogleOAuth::accessToken = responseJson["access_token"].GetString();
         GoogleOAuth::expire = time(NULL) + 3600;
     } else { throw responseJson; }
+
+    cout << "[VERBOSE] got access token " << GoogleOAuth::accessToken << endl;
 }
 
 void GoogleOAuth::authenticate() {

@@ -40,13 +40,15 @@ void *PlexDrive::init(struct fuse_conn_info *conn) {
 
     PLEXDRIVE_VERBOSE = 1;
 
+    cout << "[DEBUG] PLEXDRIVE_VERBOSE = " << PLEXDRIVE_VERBOSE << endl;
+    cout << "[DEBUG] PLEXDRIVE_PATH = " << PLEXDRIVE_PATH << endl;
     GoogleDrive::init(PLEXDRIVE_VERBOSE, PLEXDRIVE_PATH);
 
     return nullptr;
 }
 
 int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
-    //cout << "[VERBOSE] getAttr " << path << endl;
+    cout << "[DEBUG] PlexDrive::getAttr(" << path << ")" << endl;
 
     memset(stbuf, 0, sizeof(struct stat));
 
@@ -57,6 +59,9 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
         stbuf->st_nlink = (f.getMimeType() == "application/vnd.google-apps.folder") ? 2 : 1;
         stbuf->st_size = (f.getMimeType() == "application/vnd.google-apps.folder") ? 0 : f.getSize();
         //TODO modifiedTimes
+
+        cout << "[DEBUG] PlexDrive::getAttr(" << path << ") returns " << 0 << endl;
+
         return 0;
     } catch (int e) {
         return -ENOENT;
@@ -64,7 +69,7 @@ int PlexDrive::getAttr(const char *path, struct stat *stbuf) {
 }
 
 int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
-    //cout << "[VERBOSE] readDir " << path << endl;
+    cout << "[DEBUG] PlexDrive::readDir(" << path << ")" << endl;
 
     (void) offset;
     (void) fi;
@@ -78,39 +83,48 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
         File file = GoogleDrive::getFile(path);
         fv = GoogleDrive::readDirectory(file);
 
-
         for(File f : fv) {
             filler(buf, f.getName().c_str(), NULL, 0);
+            cout << "[DEBUG] PlexDrive::readDir(" << path << ") added " << f.getName() << endl;
         }
     } catch (int i) {
-
+        throw exception();
     }
+
+    cout << "[DEBUG] PlexDrive::readDir(" << path << ") returns " << 0 << endl;
 
     return 0;
 }
 
 int PlexDrive::open(const char *path, struct fuse_file_info *fi) {
-    //cout << "[VERBOSE] open " << path << endl;
+    cout << "[DEBUG] PlexDrive::open(" << path << ")" << endl;
     try {
         //File file = GoogleDrive::getFile(path);
         //TODO check online status here?
     } catch (int i) {
+        cout << "[DEBUG] PlexDrive::open(" << path << ") returns " << "-ENOENT" << endl;
         return -ENOENT;
     }
     //TODO access rights
+
+    cout << "[DEBUG] PlexDrive::open(" << path << ") returns " << 0 << endl;
 
     return 0;
 }
 
 int PlexDrive::read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    //cout << "[VERBOSE] read " << path << " from " << offset << " to " << offset + size << endl;
+    cout << "[DEBUG] PlexDrive::read(" << path << ", " << size << ", " << offset << ")" << endl;
 
     File file = GoogleDrive::getFile(path);
+    cout << "[DEBUG] PlexDrive::read(" << path << ", " << size << ", " << offset << ") got file " << file.getName() << endl;
 
     if(offset >= file.getSize())
         return 0;
 
     int count = GoogleDrive::readFile(file, buf, size, offset);
+    cout << "[DEBUG] PlexDrive::read(" << path << ", " << size << ", " << offset << ") read " << count << " bytes from " << file.getName() << endl;
+
+    cout << "[DEBUG] PlexDrive::read(" << path << ", " << size << ", " << offset << ") returns " << 0 << endl;
 
     return count;
 
