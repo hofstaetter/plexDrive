@@ -325,6 +325,7 @@ File FileCache::get(string fileId) {
         sqlite3_close(database);
         throw -1;
     }
+    cout << "[DEBUG] FileCache::get(" << fileId << ") prepared file statement" << endl;
 
     resultCode = sqlite3_bind_text(selectFileStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
     if(resultCode != SQLITE_OK) {
@@ -332,26 +333,33 @@ File FileCache::get(string fileId) {
         sqlite3_close(database);
         throw -1;
     }
+    cout << "[DEBUG] FileCache::get(" << fileId << ") bound file id" << endl;
 
     File result;
 
     while((resultCode = sqlite3_step(selectFileStatement)) == SQLITE_ROW) {
         string s(reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 0)));
         result.setId(s);
+        cout << "[DEBUG] FileCache::get(" << fileId << ") got id" << endl;
 
         s = reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 1));
         result.setName(s);
+        cout << "[DEBUG] FileCache::get(" << fileId << ") got name" << endl;
 
         s = reinterpret_cast<const char*>(sqlite3_column_text(selectFileStatement, 2));
         result.setMimeType(s);
+        cout << "[DEBUG] FileCache::get(" << fileId << ") got mime type" << endl;
 
         long temp = (long)sqlite3_column_int64(selectFileStatement, 3);
         result.setViewedByMeTime(temp);
+        cout << "[DEBUG] FileCache::get(" << fileId << ") got viewed by me time" << endl;
 
         temp = (long)sqlite3_column_int64(selectFileStatement, 4);
         result.setModifiedTime(temp);
+        cout << "[DEBUG] FileCache::get(" << fileId << ") modified time" << endl;
 
         result.setSize(sqlite3_column_int(selectFileStatement, 5));
+        cout << "[DEBUG] FileCache::get(" << fileId << ") got size" << endl;
 
         resultCode = sqlite3_prepare_v2(database, "SELECT * FROM parent WHERE child = ?1;", -1, &selectParentsStatement, NULL);
         if(resultCode != SQLITE_OK) {
@@ -359,6 +367,7 @@ File FileCache::get(string fileId) {
             sqlite3_close(database);
             throw -1;
         }
+        cout << "[DEBUG] FileCache::get(" << fileId << ") prepared parent statement" << endl;
 
         resultCode = sqlite3_bind_text(selectParentsStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
         if(resultCode != SQLITE_OK) {
@@ -366,6 +375,7 @@ File FileCache::get(string fileId) {
             sqlite3_close(database);
             throw -1;
         }
+        cout << "[DEBUG] FileCache::get(" << fileId << ") bound parent id" << endl;
 
         while((resultCode = sqlite3_step(selectParentsStatement)) == SQLITE_ROW) {
             result.getParents().emplace_back(std::string(reinterpret_cast<const char*>(sqlite3_column_text(selectParentsStatement, 1))));
@@ -375,6 +385,7 @@ File FileCache::get(string fileId) {
             sqlite3_close(database);
             throw -1;
         }
+        cout << "[DEBUG] FileCache::get(" << fileId << ") got parents" << endl;
 
         resultCode = sqlite3_reset(selectParentsStatement);
         if(resultCode != SQLITE_OK) {
@@ -382,6 +393,7 @@ File FileCache::get(string fileId) {
             sqlite3_close(database);
             throw -1;
         }
+        cout << "[DEBUG] FileCache::get(" << fileId << ") reset parent statement" << endl;
     }
     if(resultCode != SQLITE_DONE) {
         cout << "ERROR";
@@ -395,6 +407,7 @@ File FileCache::get(string fileId) {
         sqlite3_close(database);
         throw -1;
     }
+    cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectFileStatement" << endl;
 
     resultCode = sqlite3_finalize(selectParentsStatement);
     if(resultCode != SQLITE_OK) {
@@ -402,6 +415,7 @@ File FileCache::get(string fileId) {
         sqlite3_close(database);
         throw -1;
     }
+    cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectParentsStatement" << endl;
 
     closeDb(database);
 
