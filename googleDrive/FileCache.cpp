@@ -202,12 +202,13 @@ void FileCache::insert(File f) {
             throw -1;
         }
 
-        resultCode = sqlite3_bind_text(insertStatement, 1, f.getId().c_str(), -1, SQLITE_STATIC);
+        resultCode = sqlite3_bind_text(insertStatement, 1, f.getId().c_str(), -1, SQLITE_STATIC); //TODO
         if(resultCode != SQLITE_OK) {
             cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 1 << ", " << f.getId() << ")";
             sqlite3_close(database);
             throw -1;
         }
+        cout << "BOUND WITH " << f.getId() << endl;
 
         resultCode = sqlite3_bind_text(insertStatement, 2, s.c_str(), -1, SQLITE_STATIC);
         if(resultCode != SQLITE_OK) {
