@@ -88,7 +88,7 @@ int PlexDrive::readDir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
         for(File f : fv) {
             filler(buf, f.getName().c_str(), NULL, 0);
-            cout << "[DEBUG] PlexDrive::readDir(" << path << ") added " << f.getName() << endl;
+            cout << "[DEBUG] PlexDrive::readDir(" << path << ") added " << f.getId() << endl;
         }
     } catch (int i) {
         throw exception();
