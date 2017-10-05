@@ -146,7 +146,7 @@ void FileCache::insert(File f) {
         throw -1;
     }
 
-    /*resultCode = sqlite3_bind_text(insertStatement, 4, "", -1, SQLITE_STATIC);
+    /*resultCode = sqlite3_bind_text(insertStatement, 4, "", -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 4 << ", " << f.getWebContentLink() << ")";
         sqlite3_close(database);
@@ -202,15 +202,14 @@ void FileCache::insert(File f) {
             throw -1;
         }
 
-        resultCode = sqlite3_bind_text(insertStatement, 1, f.getId().c_str(), -1, SQLITE_STATIC); //TODO
+        resultCode = sqlite3_bind_text(insertStatement, 1, f.getId().c_str(), -1, SQLITE_TRANSIENT); //TODO
         if(resultCode != SQLITE_OK) {
             cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 1 << ", " << f.getId().c_str() << ")";
             sqlite3_close(database);
             throw -1;
         }
-        cout << "BOUND WITH " << f.getId().c_str() << endl;
 
-        resultCode = sqlite3_bind_text(insertStatement, 2, s.c_str(), -1, SQLITE_STATIC);
+        resultCode = sqlite3_bind_text(insertStatement, 2, s.c_str(), -1, SQLITE_TRANSIENT);
         if(resultCode != SQLITE_OK) {
             cout << "GoogleDrive::insertIntoCache sqlite3_bind_text(" << 2 << ", " << s << ")";
             sqlite3_close(database);
@@ -261,7 +260,7 @@ void FileCache::remove(string fileId) {
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(deleteStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(deleteStatement, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);
@@ -289,7 +288,7 @@ void FileCache::remove(string fileId) {
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(deleteStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(deleteStatement, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);
@@ -337,7 +336,7 @@ File FileCache::get(string fileId) {
     }
     cout << "[DEBUG] FileCache::get(" << fileId << ") prepared parent statement" << endl;
 
-    resultCode = sqlite3_bind_text(selectFileStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(selectFileStatement, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);
@@ -371,7 +370,7 @@ File FileCache::get(string fileId) {
         result.setSize(sqlite3_column_int(selectFileStatement, 5));
         cout << "[DEBUG] FileCache::get(" << fileId << ") got size" << endl;
 
-        resultCode = sqlite3_bind_text(selectParentsStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
+        resultCode = sqlite3_bind_text(selectParentsStatement, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
         if(resultCode != SQLITE_OK) {
             cout << "ERROR";
             sqlite3_close(database);
@@ -438,7 +437,7 @@ vector<string> FileCache::getChildren(string fileId) {
         throw -1;
     }
 
-    resultCode = sqlite3_bind_text(selectParentsStatement, 1, fileId.c_str(), -1, SQLITE_STATIC);
+    resultCode = sqlite3_bind_text(selectParentsStatement, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
     if(resultCode != SQLITE_OK) {
         cout << "ERROR";
         sqlite3_close(database);
