@@ -317,7 +317,8 @@ File FileCache::get(string fileId) {
 
     sqlite3 *database = openDb();
 
-    sqlite3_stmt *selectFileStatement, *selectParentsStatement;;
+    sqlite3_stmt *selectFileStatement;
+    sqlite3_stmt *selectParentsStatement;;
 
     int resultCode = sqlite3_prepare_v2(database, "SELECT * FROM File WHERE id = ?1;", -1, &selectFileStatement, NULL);
     if(resultCode != SQLITE_OK) {
@@ -409,13 +410,15 @@ File FileCache::get(string fileId) {
     }
     cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectFileStatement" << endl;
 
-    resultCode = sqlite3_finalize(selectParentsStatement);
-    if(resultCode != SQLITE_OK) {
-        cout << "ERROR";
-        sqlite3_close(database);
-        throw -1;
+    if(selectParentsStatement != NULL) {
+        resultCode = sqlite3_finalize(selectParentsStatement);
+        if (resultCode != SQLITE_OK) {
+            cout << "ERROR";
+            sqlite3_close(database);
+            throw -1;
+        }
+        cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectParentsStatement" << endl;
     }
-    cout << "[DEBUG] FileCache::get(" << fileId << ") finalized selectParentsStatement" << endl;
 
     closeDb(database);
 
